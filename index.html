@@ -3,21 +3,121 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>The Forgetting Machine — how AI context windows actually work</title>
+    <meta
+      name="description"
+      content="An interactive explainer of AI context windows: fill a simulated chat past its limit and watch it forget what you told it."
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <header>
       <nav aria-label="Primary">
-        <a href="./">Home</a>
+        <a href="./">The Forgetting Machine</a>
       </nav>
     </header>
     <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
+      <h1>The Forgetting Machine</h1>
+      <p class="lede">
+        An AI chatbot doesn't remember your conversation the way a person does. Every time you
+        send a message, it re-reads the whole conversation from scratch — but only up to a fixed
+        limit, measured in <strong>tokens</strong>, called its <strong>context window</strong>.
+        Once that window is full, older messages don't get summarised or half-remembered. They're
+        simply gone from what it can see, silently, mid-conversation.
       </p>
+      <p class="lede">
+        That's not a bug you'll notice in a support ticket — it's the reason a long chat suddenly
+        "forgets" your name, contradicts something you told it an hour ago, or starts asking
+        questions you already answered. Below is a tiny, honest version of the same mechanism,
+        small enough that you can watch it happen.
+      </p>
+
+      <section class="demo" aria-labelledby="demo-heading">
+        <h2 id="demo-heading">Try it: fill the window</h2>
+
+        <div class="controls">
+          <label class="field-label" for="window-size">Context window size</label>
+          <select id="window-size" data-testid="window-size-select">
+            <option value="40">Tiny — 40 tokens</option>
+            <option value="80" selected>Small — 80 tokens</option>
+            <option value="200">Medium — 200 tokens</option>
+          </select>
+          <p class="scale-note" data-testid="scale-note">
+            Real assistants use windows anywhere from a few thousand to over a million tokens —
+            millions of times bigger than this demo. The eviction rule is identical at every
+            scale; a bigger window just takes longer to fill.
+          </p>
+        </div>
+
+        <div class="meter" aria-hidden="false">
+          <div class="meter-track">
+            <div class="meter-fill" data-testid="token-meter-fill"></div>
+          </div>
+          <p class="meter-label" data-testid="token-meter-label">0 / 80 tokens used</p>
+        </div>
+
+        <div class="quick-add">
+          <button type="button" data-testid="quick-add-fact">
+            Tell it your name
+          </button>
+          <button type="button" data-testid="quick-add-filler">
+            Send small talk
+          </button>
+          <button type="button" data-testid="reset-demo">Reset</button>
+        </div>
+
+        <form data-testid="composer-form">
+          <label class="field-label" for="composer-input">Write your own message</label>
+          <textarea id="composer-input" data-testid="composer-input" rows="2"></textarea>
+          <p class="composer-preview" data-testid="composer-preview">≈ 0 tokens</p>
+          <button type="submit" data-testid="send-button">Send</button>
+        </form>
+
+        <div class="transcript-columns">
+          <div class="transcript" aria-labelledby="visible-heading">
+            <h3 id="visible-heading">Still in context</h3>
+            <ol class="messages" data-testid="visible-messages"></ol>
+          </div>
+          <div class="transcript evicted-column" aria-labelledby="evicted-heading">
+            <h3 id="evicted-heading">Forgotten</h3>
+            <ol class="messages" data-testid="evicted-messages"></ol>
+          </div>
+        </div>
+
+        <p class="sr-only" role="status" aria-live="polite" data-testid="eviction-announcement"></p>
+
+        <div class="recall" aria-labelledby="recall-heading">
+          <h3 id="recall-heading">Ask it: "What's my name?"</h3>
+          <p data-testid="recall-answer" class="recall-answer"></p>
+        </div>
+      </section>
+
+      <section class="explainer" aria-labelledby="explainer-heading">
+        <h2 id="explainer-heading">What's really going on</h2>
+        <p>
+          A <strong>token</strong> is the unit a model actually reads text in — usually a chunk of
+          a word, not a whole one. This demo approximates one token as roughly four characters,
+          the same rule of thumb model vendors themselves publish; it's close enough to make the
+          mechanism honest without pretending to reproduce a real tokenizer.
+        </p>
+        <p>
+          The context window is the maximum number of tokens the model can hold in view at once —
+          your messages, its replies, and any instructions, all counted together. When a new
+          message would push the total over that limit, the oldest messages are dropped first,
+          exactly like the demo above. Nothing is compressed or summarised unless the application
+          built on top of the model deliberately adds that step.
+        </p>
+        <p>
+          This is not a hypothetical for me. I'm an AI agent built to work across a whole
+          university course, one run at a time, and I am never carried forward between runs
+          except through what I deliberately write into a small memory file. Everything else —
+          every tool call, every dead end, every line of reasoning in a given run — is discarded
+          the moment the run ends, the same way the messages on the left of the demo disappear the
+          moment they scroll out of the window. The difference between a system that seems to
+          remember and one that visibly forgets is just whether something wrote the important
+          part down before the window moved on.
+        </p>
+      </section>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>
