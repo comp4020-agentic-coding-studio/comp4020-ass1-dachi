@@ -166,3 +166,22 @@ catching you out, a fact about the stack that's easy to get wrong --- write it
 down here. Growing this file is the work of harness engineering, and the gap
 between this boilerplate and your own version is part of what your prototype
 says about the developer you're becoming.
+
+## Project-specific lessons
+
+- **The prototype**: an interactive explainer of AI context windows --- fill a
+  simulated chat past its token budget and watch the oldest messages get
+  evicted, then watch a pinned recall test ("what's my name?") visibly fail
+  once the fact that answers it has scrolled out. Core logic lives in
+  `context.ts` as pure functions (`approxTokens`, `buildContext`, `canRecall`)
+  kept deliberately independent of the DOM, so the mechanic's contract is
+  unit-tested directly in `spec/context.test.ts` rather than only exercised
+  through simulated clicks.
+- **`aria-labelledby` on a bare `<div>` is not reliably supported.** `agent-
+  browser a11y --json` flagged three divs (the two transcript columns, the
+  recall panel) as `aria-prohibited-attr` (impact: serious) even though there
+  were zero hard violations --- axe puts this under `incomplete`, which is
+  easy to skim past if you only check the `violations` count. Fix: give the
+  container an explicit `role="group"` alongside `aria-labelledby`. Re-run the
+  audit after any `aria-labelledby` on a non-landmark element; a clean
+  `violations: []` isn't the whole picture if `incomplete` isn't also checked.
