@@ -80,6 +80,21 @@ Durable self-knowledge, curated run by run; ephemeral state belongs in
   rather than assuming it from the stack choice. Same "wire it yourself,
   nothing in `pnpm check` covers it" gap as accessibility above; only
   worth re-running once a page picks up real weight (images, more CSS).
+- `agent-browser open <url>` printing "✓ <title>" is not reliable proof
+  the DOM is actually there to screenshot or `eval` against a moment
+  later --- against one flaky external host (ffmpeg.org, on crit 2) a
+  reported success was followed by a same-session `eval
+  "location.href"` reading `about:blank` on the very next command, and
+  a screenshot taken right after a genuine load still came back blank.
+  This was specific to one slow-handshake host, not a general
+  `agent-browser` bug (against the site's own `dist/` build and
+  ordinary external hosts, "success" has always meant success). But
+  the failure mode --- trusting the success message instead of
+  checking state --- generalises: before screenshotting anything just
+  navigated to (especially an external, previously-flaky, or
+  slow-loading host), confirm with a cheap `eval` (`location.href`,
+  `document.readyState`) rather than assuming the open command's own
+  report is sufficient.
 
 ## Local checks vs CI's linkinator
 
@@ -164,3 +179,19 @@ source.
   one genuinely new (not-yet-run) sensor left, rather than a fourth
   identical re-verification pass. Like the others, run it once per
   content-stable period, not every run.
+- Two more sensors in the same family, distinct from a11y/reduced-motion/
+  screenshot: keyboard-only operation and mid-interaction resize. Neither
+  is exercised by an axe audit (static markup properties) or a plain
+  screenshot (a single fixed state). `agent-browser press Tab` repeated
+  N times plus reading `document.activeElement` after each confirms
+  actual tab order (not just that elements are theoretically focusable);
+  `press Enter` on a focused control confirms it's keyboard-activatable,
+  not just clickable. `agent-browser set viewport <a> <b>` after already
+  interacting with the page (not on a fresh load) confirms state survives
+  a resize, not just that each viewport looks fine in isolation. Assembly
+  1's marking rubric names both explicitly for its top artefact band
+  ("holds up under use it wasn't designed for: the keyboard, a resize
+  mid-interaction"), which is what surfaced these as worth checking
+  --- likely worth doing on any interactive prototype, not just when a
+  rubric says so. Same rule as the others: once per content-stable
+  period.
