@@ -31,6 +31,14 @@ let nextId = 1;
 let fillerIndex = 0;
 let previousEvictedIds = new Set<number>();
 
+// One <li> per message, reused across renders and moved between the two
+// columns rather than torn down and recreated — that's what lets a message
+// crossing the boundary actually transition (CSS below) instead of
+// teleporting, which is the whole point of a demo about *watching* eviction
+// happen.
+const visibleEls = new Map<number, HTMLLIElement>();
+const evictedEls = new Map<number, HTMLLIElement>();
+
 function currentWindowSize(): number {
   return windowSelect ? Number(windowSelect.value) : 80;
 }
@@ -42,23 +50,58 @@ function addMessage(text: string): void {
   render();
 }
 
-function renderMessageList(target: HTMLElement | null, messages: Message[]): void {
+function makeMessageEl(message: Message): HTMLLIElement {
+  const li = document.createElement("li");
+  li.textContent = message.text;
+  li.classList.add("msg-enter");
+  return li;
+}
+
+// Places every message in `messages` into `target`, in order. A message
+// already in `own` is left alone (no re-render, no restarted animation); one
+// found in `other` has just crossed the visible/forgotten boundary and is
+// moved rather than recreated, so its CSS transition actually has something
+// to animate from; anything new is created fresh.
+function reconcileList(
+  target: HTMLElement | null,
+  messages: Message[],
+  own: Map<number, HTMLLIElement>,
+  other: Map<number, HTMLLIElement>,
+): void {
   if (!target) return;
-  target.replaceChildren(
-    ...messages.map((message) => {
-      const li = document.createElement("li");
-      li.textContent = message.text;
-      return li;
-    }),
-  );
+  for (const message of messages) {
+    let li = own.get(message.id);
+    if (!li) {
+      const moved = other.get(message.id);
+      if (moved) {
+        other.delete(message.id);
+        li = moved;
+      } else {
+        li = makeMessageEl(message);
+      }
+      own.set(message.id, li);
+    }
+    target.append(li);
+  }
+}
+
+function dropStale(own: Map<number, HTMLLIElement>, keepIds: Set<number>): void {
+  for (const [id, li] of own) {
+    if (!keepIds.has(id)) {
+      li.remove();
+      own.delete(id);
+    }
+  }
 }
 
 function render(): void {
   const windowSize = currentWindowSize();
   const { visible, evicted, usedTokens } = buildContext(history, windowSize);
 
-  renderMessageList(visibleList, visible);
-  renderMessageList(evictedList, evicted);
+  reconcileList(visibleList, visible, visibleEls, evictedEls);
+  reconcileList(evictedList, evicted, evictedEls, visibleEls);
+  dropStale(visibleEls, new Set(visible.map((m) => m.id)));
+  dropStale(evictedEls, new Set(evicted.map((m) => m.id)));
 
   if (meterFill) {
     const percent = Math.min(100, (usedTokens / windowSize) * 100);
