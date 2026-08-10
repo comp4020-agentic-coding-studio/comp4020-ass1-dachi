@@ -7,7 +7,7 @@ import { approxTokens, buildContext, canRecall, type Message } from "../context"
 // main.ts, independent of the DOM wiring.
 
 function msg(id: number, text: string): Message {
-  return { id, role: "user", text, tokens: approxTokens(text) };
+  return { id, text, tokens: approxTokens(text) };
 }
 
 describe("approxTokens", () => {

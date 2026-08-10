@@ -3,7 +3,6 @@
 
 export interface Message {
   id: number;
-  role: "user" | "them";
   text: string;
   tokens: number;
 }

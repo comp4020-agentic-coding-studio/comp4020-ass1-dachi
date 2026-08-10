@@ -38,7 +38,7 @@ function currentWindowSize(): number {
 function addMessage(text: string): void {
   const trimmed = text.trim();
   if (trimmed === "") return;
-  history = [...history, { id: nextId++, role: "user", text: trimmed, tokens: approxTokens(trimmed) }];
+  history = [...history, { id: nextId++, text: trimmed, tokens: approxTokens(trimmed) }];
   render();
 }
 
