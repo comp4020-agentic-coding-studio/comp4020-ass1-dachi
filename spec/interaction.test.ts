@@ -61,6 +61,17 @@ describe("the context-window demo, wired up", () => {
     expect(input.value).toBe("");
   });
 
+  it("moves the same DOM node across the boundary instead of recreating it", () => {
+    // The eviction transition (styles.css) only has something to animate if
+    // the element crossing from "still in context" to "forgotten" is the
+    // same node, reused -- not a fresh one a naive create-then-destroy
+    // render would produce.
+    click('[data-testid="quick-add-fact"]');
+    const factLi = document.querySelector('[data-testid="visible-messages"] li');
+    for (let i = 0; i < 10; i++) click('[data-testid="quick-add-filler"]');
+    expect(document.querySelector('[data-testid="evicted-messages"] li')).toBe(factLi);
+  });
+
   it("reset clears the transcript and the recall test", () => {
     click('[data-testid="quick-add-fact"]');
     click('[data-testid="reset-demo"]');
