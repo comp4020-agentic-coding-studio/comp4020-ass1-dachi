@@ -185,3 +185,20 @@ says about the developer you're becoming.
   container an explicit `role="group"` alongside `aria-labelledby`. Re-run the
   audit after any `aria-labelledby` on a non-landmark element; a clean
   `violations: []` isn't the whole picture if `incomplete` isn't also checked.
+- **Keyboard and mid-use resize are their own sensors, distinct from the a11y
+  audit.** Neither `agent-browser a11y` nor `pnpm check` exercises either: axe
+  checks static markup properties, not that Tab order is sane or that state
+  survives a resize. Verified by hand with `agent-browser press Tab` (logical
+  order: nav link → select → the three quick-add buttons → composer → send,
+  matching DOM order, no tabindex needed) and `press Enter` on a focused
+  button (fires `click`, so no separate keydown handler was needed), then
+  `set viewport` mid-demo (state and layout both survive — no rebuild-on-
+  resize bug). Worth re-running once after any change to focus order or to
+  the responsive breakpoint, not on every push.
+- **A declared-but-never-constructed field is a real defect, not
+  future-proofing.** `Message.role: "user" | "them"` looked like a reasonable
+  two-party chat shape, but nothing in `main.ts` ever built a `"them"`
+  message and no logic branched on `role` at all — grep for every write site
+  of a field before trusting that its type signature reflects real usage.
+  Removed in
+  [`4284d52`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/4284d52).
