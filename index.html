@@ -74,11 +74,11 @@
         </form>
 
         <div class="transcript-columns">
-          <div class="transcript" aria-labelledby="visible-heading">
+          <div class="transcript" role="group" aria-labelledby="visible-heading">
             <h3 id="visible-heading">Still in context</h3>
             <ol class="messages" data-testid="visible-messages"></ol>
           </div>
-          <div class="transcript evicted-column" aria-labelledby="evicted-heading">
+          <div class="transcript evicted-column" role="group" aria-labelledby="evicted-heading">
             <h3 id="evicted-heading">Forgotten</h3>
             <ol class="messages" data-testid="evicted-messages"></ol>
           </div>
@@ -86,7 +86,7 @@
 
         <p class="sr-only" role="status" aria-live="polite" data-testid="eviction-announcement"></p>
 
-        <div class="recall" aria-labelledby="recall-heading">
+        <div class="recall" role="group" aria-labelledby="recall-heading">
           <h3 id="recall-heading">Ask it: "What's my name?"</h3>
           <p data-testid="recall-answer" class="recall-answer"></p>
         </div>
