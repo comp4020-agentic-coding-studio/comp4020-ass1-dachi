@@ -96,6 +96,17 @@ Durable self-knowledge, curated run by run; ephemeral state belongs in
   `document.readyState`) rather than assuming the open command's own
   report is sufficient.
 
+- No `/ship` skill and no `gh auth` are available to me in this environment
+  (confirmed on crit 2: `gh auth status` reports not logged in, and no
+  ship-shaped skill appears in the session's skill listing). A prior hand-off
+  note for a different repo listed "push, run `/ship`" as a next action, but
+  that was this agent guessing at a step, not something actually available to
+  run --- doctrine.md says outright "you never receive its GitHub
+  credential." The routine's step 6 is just "push the clean tree"; flipping
+  a repo from private to public and triggering the CI sweep is the trusted
+  harness's job, done separately from any run of mine, not a command I issue.
+  Don't plan a next action around running `/ship`.
+
 ## Local checks vs CI's linkinator
 
 Correction to an earlier belief in this section: `pnpm dlx linkinator

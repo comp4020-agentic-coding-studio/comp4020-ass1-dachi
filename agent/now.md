@@ -2,87 +2,69 @@
 
 ## State
 
-`comp4020-ass1-dachi`: 159h to cutoff at run start (due noon Mon 17 Aug
-2026), so this run's job was plan/build/deepen, not finish. The prototype
-was already content-complete from prior runs: **The Forgetting Machine**,
-a one-idea interactive explainer of AI context windows --- fill a
-simulated chat past its token budget, watch the oldest messages evict,
-watch a pinned recall test ("what's my name?") visibly fail once the fact
-that answers it has scrolled out. `context.ts` holds the pure eviction/
-recall logic (unit-tested in `spec/context.test.ts`); `main.ts` wires it
-to the real DOM (covered separately by `spec/interaction.test.ts`, which
-re-parses `index.html` so it breaks if markup and script drift apart).
-`pnpm check` was already green (28/28 tests) and the aria-labelledby/
-role=group a11y fix was already landed, at run start. Repo is pushed to
-`origin/main` but still private (not yet `/ship`ped) --- expected this far
-out, nothing to act on yet.
+`comp4020-ass1-dachi`: 148h to cutoff at run start (due noon Mon 17 Aug
+2026), so plan/build/deepen, not finishing. The prototype ("The Forgetting
+Machine" --- an interactive explainer of AI context windows: fill a
+simulated chat past its token budget, watch the oldest messages evict, watch
+a pinned recall test fail once the fact that answers it has scrolled out)
+was already content-complete and `pnpm check` green (28/28) from prior runs,
+with the accessibility (`role="group"`) and keyboard/resize sensor passes
+already recorded in the project's `CLAUDE.md`. `PROCESS.md` and
+`reflections/assignment-1.md` are still untouched --- correctly, per the
+doctrine's "don't write these until the commit history is close to settled"
+rule; 148h out is nowhere near settled.
 
 ## What I did this run
 
-1. Re-fetched the course source (`assessments/assignment-1.json`). Brief
-   unchanged: one strong idea and nothing else, deployed + client-side,
-   works at both viewports, a real state-changing interaction, process
-   evidence (`PROCESS.md` 400--600 words / 3--4 harness-level moments,
-   `CLAUDE.md`, `reflections/assignment-1.md`). Marking weights: process
-   45%, response-to-brief 35%, artefact 20%. Noted for the finishing run:
-   the HD artefact band explicitly names keyboard use and mid-interaction
-   resize, not just the two fixed viewports.
-2. Grepped every write site of `Message.role` and found `"them"` was
-   declared in the type but never constructed and never branched on
-   anywhere --- dead speculative shape. Removed it
-   ([`4284d52`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/4284d52)).
-   `pnpm check` stayed green (28/28) after.
-3. Ran the two a11y/layout sensors already established as this project's
-   pattern --- `agent-browser a11y --json` (0 violations, 0 incomplete at
-   both 1920×1080 and 390×844) and a screenshot pass at both viewports,
-   including mid-demo (some messages evicted, meter red, recall showing
-   "forgotten") --- both clean, no drift since the last a11y fix landed.
-4. Ran two sensors this project's `CLAUDE.md` hadn't recorded trying
-   before: keyboard-only operation (`agent-browser press Tab` through the
-   whole page --- nav link → select → three quick-add buttons → composer
-   → send, in logical DOM order with no tabindex hacks needed; `press
-   Enter` on a focused quick-add button fires the click handler with no
-   extra code) and a live viewport resize mid-interaction (desktop → phone
-   with messages already evicted --- state and layout both survived, no
-   rebuild-on-resize bug). Both genuinely new checks, not a repeat of the
-   prior a11y-only pass; recorded in the project's `CLAUDE.md`
-   ([`eb54414`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/eb54414)).
-5. Did not touch `PROCESS.md` or `reflections/assignment-1.md` --- both
-   are still the unfilled template, correctly deferred per the pacing
-   rule (>24h out, don't write final citations before the history they'd
-   cite has settled). The dead-role removal and the keyboard/resize
-   verification are both strong PROCESS.md candidates already
-   (harness-level correction + a check wired up, not a retry) --- worth
-   remembering when that file gets written for real.
+1. Fetched the course source (`api/assessments/assignment-1.json`) and
+   confirmed the brief and marking bands: process 45%, artefact 20%,
+   response-to-brief 35%; `PROCESS.md` needs 400--600 words and 3--4 moments,
+   favouring harness-level corrections over retries; due noon Mon 17 Aug.
+2. Read the existing `main.ts`/`context.ts`/`index.html`/`styles.css`/spec
+   suite. Found one real gap against the artefact rubric's HD band ("holds up
+   under use it wasn't designed for") and the brief's own promised UX
+   ("small enough that you can watch it happen"): the transcript columns were
+   rebuilt with `replaceChildren` on every render, so a message crossing the
+   visible/forgotten boundary was destroyed and recreated, not transitioned
+   --- it teleported instead of visibly "happening".
+3. Rewrote the render path in `main.ts` to reconcile `<li>` elements by
+   message id across two `Map`s (`visibleEls`/`evictedEls`), moving a node
+   between columns when it crosses the boundary instead of tearing it down,
+   with a one-shot entrance animation for genuinely new messages
+   ([`60bfa77`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/60bfa77)).
+   Added matching CSS transitions/keyframes in `styles.css`, gated behind
+   `prefers-reduced-motion` (same commit).
+4. Verified for real, not assumed: `pnpm check` green throughout; served the
+   actual `dist/` build via `vite preview` and drove it with `agent-browser`
+   --- forced eviction via `eval`, confirmed the moved `<li>` has the real
+   `transition-duration: 0.35s` computed style, confirmed
+   `set media reduced-motion` collapses it to `0s`, screenshotted both
+   marking viewports (1920×1080, 390×844) clean. Killed the preview server
+   afterwards.
+5. Added a regression test pinning down the behaviour the animation actually
+   depends on: the `<li>` that crosses from visible to evicted is the *same*
+   DOM node, not a fresh one
+   ([`da6e6da`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/da6e6da))
+   --- without it, a regression to `replaceChildren` would only be visible by
+   eye, not caught by `pnpm check`. 29/29 tests green.
+6. Pushed both commits to `origin/main`. Working tree clean.
 
-## Next action (assignment 1)
+## Next action
 
-If cutoff is still >24h away: re-fetch the course source, take stock of
-git history, and look for genuine new work --- deepening the single idea
-(e.g. an aria-live announcement text check I haven't manually verified
-yet, though it's already wired in `main.ts`) or a real gap, not a fifth
-identical re-verification pass. Content and the established sensors
-(a11y, keyboard, resize, screenshots) are all currently clean; don't
-re-run them again next visit unless something in the code actually
-changed since this run.
-
-If cutoff is <24h away: this is the finishing run.
-1. Confirm `pnpm check` still green; re-run the a11y/keyboard/resize
-   sensors once more only if code changed since this hand-off.
-2. Write `PROCESS.md` for real: 400--600 words, **3--4 moments**, favouring
-   harness-level corrections over retries. Strong candidates already in
-   history: the `aria-labelledby`→`role="group"` a11y fix (a rule that
-   changed the harness, `CLAUDE.md`, not just the markup); the dead
-   `"them"`-role removal (grep-every-write-site as a habit, not a retry);
-   the DOM-level `interaction.test.ts` added to cover what the pure
-   `context.test.ts` couldn't see (main.ts's actual wiring).
-3. Write `reflections/assignment-1.md` (150--300 words, both standing
-   prompts --- this is also what the week 4 retro reads, so make the
-   breakthrough half concrete).
-4. Run `pnpm check:evidence` before committing PROCESS.md/reflection.
-5. Push, run `/ship` (repo is still private), then verify the *live*
-   GitHub Pages URL at both viewports, not just local build.
-
-No open risks. This is a plain local Vite dev server + `agent-browser`
-against `localhost` --- none of the crit-2 ffmpeg.org-specific network
-flakiness applies here.
+Still well inside the plan/build/deepen window (~148h - this run's wall time
+left). No new durable environment/working-style lesson came out of this run
+worth adding to `MEMORY.md` --- it was a straightforward build task, not a
+harness-level correction, so I left that file untouched. Genuinely
+not-yet-run sensors for a future run, in rough priority order: a keyboard-only
+pass specifically over the *new* animated elements (existing keyboard
+verification predates this change and covered focus order, not the new
+transition classes --- unlikely to matter since animation doesn't touch
+tabindex/focus, but not yet confirmed); and, separately, whether the response-
+to-brief criterion ("a pointed, surprising answer... one idea, carried all the
+way") would be strengthened or diluted by any further mechanic (e.g. a pinned/
+system-message that survives eviction, mirroring how real systems mitigate
+this) --- weigh that against the brief's explicit warning about over-scoping
+before building it, don't build it by default. `PROCESS.md` and
+`reflections/assignment-1.md` should stay untouched until the work is close
+to settled, per doctrine and past experience (crit 2: writing them early just
+means rewriting them later).
