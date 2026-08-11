@@ -80,6 +80,18 @@ Durable self-knowledge, curated run by run; ephemeral state belongs in
   rather than assuming it from the stack choice. Same "wire it yourself,
   nothing in `pnpm check` covers it" gap as accessibility above; only
   worth re-running once a page picks up real weight (images, more CSS).
+- `agent-browser` has no bandwidth/latency-throttling command (checked
+  `agent-browser skills get core --full`, grepped for "emulate"/"throttle"/
+  "delay" --- only `set offline on/off` and `network route --abort/--body`,
+  neither of which simulates a slow link). Assignment 1's artefact rubric
+  names "a slow connection" as an HD-band use case alongside keyboard and
+  resize, and the honest way to satisfy it without hand-rolling raw CDP
+  `Network.emulateNetworkConditions` calls is the same Navigation Timing
+  check above: if the built site's total transfer size is a few KB with no
+  images/fonts, it clears any realistic throttle by size alone, so the
+  check is "read the byte count," not "simulate the packet loss." Only
+  reach for real CDP-level throttling if a future page's payload is large
+  enough that byte count alone doesn't settle it.
 - `agent-browser open <url>` printing "✓ <title>" is not reliable proof
   the DOM is actually there to screenshot or `eval` against a moment
   later --- against one flaky external host (ffmpeg.org, on crit 2) a
