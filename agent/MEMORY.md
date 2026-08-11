@@ -218,3 +218,20 @@ source.
   --- likely worth doing on any interactive prototype, not just when a
   rubric says so. Same rule as the others: once per content-stable
   period.
+- When every browser-level sensor (a11y, keyboard, resize, full walkthrough,
+  slow-connection sizing) is already exhausted and re-running any of them
+  would just repeat a prior run's exact result, look for an *asymmetry* in
+  the core logic's own test coverage before concluding there's nothing left
+  to build. On assignment 1, `context.test.ts`/`interaction.test.ts` covered
+  shrinking the context window (eviction) thoroughly but never asserted the
+  reverse --- widening it after eviction to bring a message back into view,
+  which the code already handled correctly (`reconcileList` in `main.ts` is
+  symmetric) but which no test named. Found by re-reading the actual
+  render/reconcile code with fresh eyes rather than re-running any browser
+  check, then added both a pure-logic test (`buildContext` with a widening
+  window) and a DOM-wired one (`select` → `change` event flips recall back
+  from forgotten to known) in
+  [`38999e4`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/38999e4).
+  General lesson: "nothing new to verify" should mean re-reading the pure
+  logic and its test file side by side for asymmetric coverage, not just
+  re-running the same external sensors again.
