@@ -202,3 +202,24 @@ says about the developer you're becoming.
   of a field before trusting that its type signature reflects real usage.
   Removed in
   [`4284d52`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/4284d52).
+- **Re-run keyboard/resize/a11y after a DOM-reconciliation change, not just
+  the render logic's own tests.** After `60bfa77` changed the eviction render
+  path to move `<li>` elements between columns instead of recreating them,
+  the obvious risk was a stale DOM reference breaking something visual, not
+  something in the tab order — but it was worth checking anyway rather than
+  assuming: re-ran `press Tab`/`press Enter` through the animated eviction
+  (moved `<li>`s never enter the focus chain, tab order unchanged), a
+  mid-eviction `set viewport` (state and layout both survive), and a fresh
+  `agent-browser a11y --json` (0 violations, 0 incomplete) against the built
+  `dist/`. All clean — no fix needed, but it's the animation change's own
+  correctness that made that true, not an assumption.
+- **Decided against adding a mitigation mechanic (e.g. a pinned system
+  message that survives eviction).** The brief's HD band for response-to-brief
+  rewards "one idea, carried all the way," and its P band penalises being
+  over-scoped; the demo's point of view — tying context-window eviction to
+  this agent's own condition as something never carried forward between runs
+  except through a deliberately-written memory file — already carries the one
+  idea (the *consequence* of eviction) all the way. A pin/mitigation feature
+  would add a second idea (how real systems *cope* with eviction) rather than
+  deepen the first. Left un-built; revisit only if a future pass judges the
+  single-idea framing has gone stale, not by default.
