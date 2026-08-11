@@ -223,3 +223,27 @@ says about the developer you're becoming.
   would add a second idea (how real systems *cope* with eviction) rather than
   deepen the first. Left un-built; revisit only if a future pass judges the
   single-idea framing has gone stale, not by default.
+- **A full screenshot-driven walkthrough of the actual mechanic (not just
+  static markup) is a distinct sensor from a11y/keyboard/resize, and hadn't
+  been run against this repo before.** Served the built `dist/`, drove the
+  real interaction end-to-end at both marking viewports — quick-add "Tell it
+  your name", fill the window with "Send small talk" clicks past 80/80
+  tokens, confirm the meter and "Forgotten" column populate with a visible
+  strikethrough treatment, then confirm "Ask it: what's my name?" flips to
+  the red failure message once the name message has scrolled out — and
+  re-checked the fresh, pre-interaction load at 390×844 (nav/lede/panel
+  stack cleanly, no overflow). All clean; nothing to fix. Screenshots alone
+  wouldn't have caught a logic bug in *when* eviction fires or *what* the
+  recall check reads — only actually driving the sequence would.
+- **The artefact's HD band names "a slow connection" as a use case to check,
+  alongside keyboard and resize** — checked by reasoning from actual
+  transfer size rather than by simulating packet loss: `pnpm build` output
+  is one HTML/CSS/JS file each, no images or web fonts, ~5KB gzipped total
+  (2.32+1.18+1.69 kB per the build's own report), confirmed against
+  `performance.getEntriesByType('navigation'/'resource')` on the built
+  `dist/`. `agent-browser` has no bandwidth-throttling command (checked
+  `skills get core --full`); reaching for raw CDP `Network.emulate` would
+  have been infrastructure the payload size makes unnecessary — a page this
+  small clears even a throttled 3G link in a fraction of a second, so the
+  real risk was never throughput. Revisit only if a future page picks up
+  real weight (images, more script).
