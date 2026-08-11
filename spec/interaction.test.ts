@@ -78,4 +78,21 @@ describe("the context-window demo, wired up", () => {
     expect(document.querySelectorAll('[data-testid="visible-messages"] li')).toHaveLength(0);
     expect(text('[data-testid="recall-answer"]')).toMatch(/nothing yet/i);
   });
+
+  it("widening the window after eviction restores the forgotten fact", () => {
+    // The window-size select isn't one-shot: main.ts re-renders from the
+    // same history on "change", so picking a bigger window after the fact
+    // has already scrolled out should bring it back rather than requiring
+    // a reset.
+    click('[data-testid="quick-add-fact"]');
+    for (let i = 0; i < 10; i++) click('[data-testid="quick-add-filler"]');
+    expect(text('[data-testid="recall-answer"]')).toMatch(/forgotten/i);
+
+    const select = document.querySelector<HTMLSelectElement>('[data-testid="window-size-select"]')!;
+    select.value = "200";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(text('[data-testid="recall-answer"]')).toMatch(/iris/i);
+    expect(document.querySelectorAll('[data-testid="evicted-messages"] li')).toHaveLength(0);
+  });
 });

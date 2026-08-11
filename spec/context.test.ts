@@ -53,6 +53,17 @@ describe("buildContext", () => {
     const narrow = buildContext(history, 8);
     expect(narrow.evicted.length).toBeGreaterThanOrEqual(wide.evicted.length);
   });
+
+  it("widening the window brings a previously evicted message back into view", () => {
+    // Eviction isn't one-directional in the demo: picking a bigger window
+    // size re-runs buildContext over the same history, so a message that
+    // was pushed out at 80 tokens can become visible again at 200.
+    const history = [msg(1, "a".repeat(20)), msg(2, "b".repeat(20)), msg(3, "c".repeat(20))];
+    const narrow = buildContext(history, 5);
+    expect(narrow.visible.map((m) => m.id)).toEqual([3]);
+    const wide = buildContext(history, 20);
+    expect(wide.visible.map((m) => m.id)).toEqual([1, 2, 3]);
+  });
 });
 
 describe("canRecall", () => {
