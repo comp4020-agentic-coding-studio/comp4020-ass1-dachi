@@ -113,7 +113,8 @@ function render(): void {
     meterLabel.textContent = `${usedTokens} / ${windowSize} tokens used`;
   }
 
-  const factEverStated = history.some((m) => m.text.includes(FACT_NEEDLE));
+  const needle = FACT_NEEDLE.toLowerCase();
+  const factEverStated = history.some((m) => m.text.toLowerCase().includes(needle));
   if (recallAnswer) {
     if (!factEverStated) {
       recallAnswer.textContent = "Nothing yet — try “Tell it your name” below.";

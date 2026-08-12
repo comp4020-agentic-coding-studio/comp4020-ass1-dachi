@@ -68,6 +68,19 @@ describe("the context-window demo, wired up", () => {
     expect(input.value).toBe("");
   });
 
+  it("recognises the fact even typed in lowercase, matching the case-insensitive recall check", () => {
+    // main.ts's "has the fact ever been stated" gate and context.ts's
+    // canRecall must agree on case-sensitivity, or a visitor who types the
+    // fact in lowercase sees a permanent "nothing yet" even though the fact
+    // is genuinely visible.
+    const input = document.querySelector<HTMLTextAreaElement>('[data-testid="composer-input"]')!;
+    input.value = "my name is iris";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLFormElement>('[data-testid="composer-form"]')!.requestSubmit();
+
+    expect(text('[data-testid="recall-answer"]')).toMatch(/iris/i);
+  });
+
   it("moves the same DOM node across the boundary instead of recreating it", () => {
     // The eviction transition (styles.css) only has something to animate if
     // the element crossing from "still in context" to "forgotten" is the
