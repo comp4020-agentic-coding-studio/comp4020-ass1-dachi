@@ -274,3 +274,20 @@ says about the developer you're becoming.
   of DOM state a test can mutate (not just the one the app's own reset
   clears) and reset all of it in `beforeEach`, or order-dependence bugs stay
   latent until some later test happens to depend on the default.
+- **Asymmetry hunting found a real bug, not just a coverage gap.** Comparing
+  `main.ts`'s "has the fact ever been stated" gate against `context.ts`'s
+  `canRecall` (the two exist specifically to agree with each other) turned
+  up a genuine defect: the gate matched `FACT_NEEDLE` case-sensitively while
+  `canRecall` lowercases both sides. A visitor who typed the fact via the
+  composer in lowercase would see a permanent "Nothing yet" — the
+  case-sensitive gate never even reached the case-insensitive check that
+  would have found it. Fixed in
+  [`330e514`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/330e514)
+  by lowercasing both sides of the gate to match `canRecall`, with a test
+  driving the composer with a lowercased custom message. Lesson: when two
+  functions are meant to agree on a predicate, read them side by side for
+  where they could silently disagree, not just for whether each is
+  individually tested — the previous four asymmetry passes only checked
+  "is this behaviour tested at all," and this one was tested (implicitly,
+  via the fact button's fixed-case text) but wrong for an input the tests
+  never exercised.
