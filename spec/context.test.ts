@@ -54,6 +54,18 @@ describe("buildContext", () => {
     expect(narrow.evicted.length).toBeGreaterThanOrEqual(wide.evicted.length);
   });
 
+  it("evicts a contiguous oldest-first prefix even when message sizes vary — a smaller older message isn't kept just because a bigger, newer one didn't fit", () => {
+    // Oldest first: "hi" (1 token). Middle: a 9-token message too big to
+    // join the newest once it's already used 2 of the 10-token budget.
+    // Newest: "yo!!!" (2 tokens), which fits on its own. A naive
+    // fits-individually loop would skip the 9-token middle message and
+    // then let the older, smaller "hi" back in — this asserts it doesn't.
+    const history = [msg(1, "hi"), msg(2, "x".repeat(33)), msg(3, "yo!!!")];
+    const { visible, evicted } = buildContext(history, 10);
+    expect(visible.map((m) => m.id)).toEqual([3]);
+    expect(evicted.map((m) => m.id)).toEqual([1, 2]);
+  });
+
   it("widening the window brings a previously evicted message back into view", () => {
     // Eviction isn't one-directional in the demo: picking a bigger window
     // size re-runs buildContext over the same history, so a message that

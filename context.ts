@@ -29,13 +29,19 @@ export function buildContext(history: Message[], windowSize: number): ContextSta
   const visible: Message[] = [];
   const evicted: Message[] = [];
   let used = 0;
+  // Once one message fails to fit, every older message is evicted too —
+  // otherwise a smaller-but-older message could slip in after a larger,
+  // newer one is skipped, breaking the oldest-first guarantee the demo
+  // exists to show.
+  let full = false;
 
   for (let i = history.length - 1; i >= 0; i--) {
     const message = history[i];
-    if (used + message.tokens <= windowSize) {
+    if (!full && used + message.tokens <= windowSize) {
       visible.unshift(message);
       used += message.tokens;
     } else {
+      full = true;
       evicted.unshift(message);
     }
   }
