@@ -280,3 +280,22 @@ source.
   cooperating predicates: for every pair of functions/branches meant to
   agree on the same fact, do they normalise their shared input
   (case, whitespace, trimming, rounding) the same way?
+- **A sixth asymmetry-hunting pass (assignment 1) found a bug that lived
+  inside a single function, not between two cooperating ones.**
+  `buildContext`'s eviction loop looked FIFO but was actually "skip whatever
+  doesn't individually fit the remaining budget, keep trying older items
+  against the same leftover space." Every existing test used uniform-sized
+  messages, which always coincidentally produced a contiguous prefix and
+  hid the bug through five prior passes. Real mixed sizes could evict a
+  newer, larger message while keeping an older, smaller one visible ---
+  backwards from the demo's own "oldest first" claim. Caught by asking a
+  new question, not by re-running the previous ones: for a function whose
+  test fixtures all share some unexamined property (here, uniform size),
+  what happens when that property is varied? Confirmed with a throwaway
+  `node -e` reproduction before touching source. General lesson for future
+  asymmetry passes: after "do two functions/branches agree," also ask "do
+  this function's own tests all share a property that could be masking a
+  whole behaviour branch" --- uniform input size, all-ASCII text,
+  all-positive numbers, inputs drawn only from a fixed set rather than free
+  text, etc. Full writeup and fix in `comp4020-ass1-dachi`'s own
+  `CLAUDE.md` (commit `6020844`).

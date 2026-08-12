@@ -1,71 +1,77 @@
-# Hand-off --- assignment 1, a real bug found by asymmetry hunting
+# Hand-off --- assignment 1, a real bug found inside one function
 
 ## State
 
-`comp4020-ass1-dachi`: ~111h to cutoff at run start (due noon Mon 17 Aug
+`comp4020-ass1-dachi`: ~99h to cutoff at run start (due noon Mon 17 Aug
 2026), still plan/build/deepen, not finishing. Prototype ("The Forgetting
-Machine") content-complete, `pnpm check` green (38/38 after this run),
+Machine") content-complete, `pnpm check` green (39/39 after this run),
 `PROCESS.md` and `reflections/assignment-1.md` still correctly untouched.
 
 ## What I did this run
 
-Followed the previous hand-off's named next action: a fifth asymmetry pass
-over `context.ts`/`main.ts` against their tests, specifically the two
-candidates it flagged as unverified (not yet known bugs) --- the
-composer-preview reset to "≈ 0 tokens" after submit, and
-`factEverStated`'s case-sensitivity vs `canRecall`'s case-insensitivity.
+Followed the previous hand-off's named next action: check `buildContext`'s
+behaviour when a message's own size interacts oddly with the window
+budget. This turned into a real bug, not just a coverage gap: `buildContext`
+walks history newest-to-oldest, and for any message that doesn't fit the
+*remaining* budget it marks it evicted but keeps checking older messages
+against that same leftover space, rather than stopping. Every existing test
+fixture used uniform-sized messages, which coincidentally always produced a
+contiguous prefix and hid this for five prior asymmetry passes. With real
+mixed sizes (the fixed fact/filler strings run 6--11 tokens; composer free
+text is unbounded) a plausible sequence --- small, then one message too big
+to fit, then another small one that does fit in the still-unused budget ---
+evicts the *newer*, larger middle message while keeping an *older*, smaller
+one visible. That's backwards from the page's own explainer claim
+("oldest messages are dropped first").
 
-The second one was a **real bug**, not just a coverage gap: `main.ts`'s
-"has the fact ever been stated" gate matched `FACT_NEEDLE` case-
-sensitively, while `context.ts`'s `canRecall` (which only runs once that
-gate passes) lowercases both sides. A visitor who typed the fact via the
-free-text composer in lowercase ("my name is iris") would see a permanent
-"Nothing yet" forever --- the case-sensitive gate would never even reach
-the case-insensitive check that would have found it. This was invisible
-before because the only way the demo's own UI states the fact is the
-quick-add button, which always sends the fixed-case string "Iris" ---
-the bug only reachable via the composer, an input surface the existing
-tests exercised for other reasons but never with this specific content.
-
-Fixed by lowercasing both sides of the gate to match `canRecall`
-(`330e514`), with a DOM test driving the composer with a lowercased
-custom message. Also added the composer-preview-reset test that had been
-flagged unverified but turned out correct as written (`14d6257`). Recorded
-the bug and the generalised lesson --- side-by-side reading for where two
-functions meant to *agree* on a predicate could silently *disagree*, not
-just whether each is individually tested --- in this repo's own
-`CLAUDE.md` (`80be074`). Pushed all three commits; working tree clean,
-38/38 tests, `pnpm check` fully green.
+Confirmed with a hand-run `node -e` reproduction before touching any code,
+fixed by latching a `full` flag the first time a message doesn't fit so
+everything older is evicted unconditionally after that, added a unit test
+encoding the contiguous-prefix invariant, then re-verified against the real
+DOM with `agent-browser eval` driving the composer through 35/36/2-token
+messages against a 40-token window on the built `dist/` (correct, contiguous
+result, no crash). Committed as `6020844` (fix + test) and `d2e6a7d`
+(CLAUDE.md lesson). Pushed both; working tree clean, 39/39 tests,
+`pnpm check` fully green.
 
 ## Next action
 
-Still well inside plan/build/deepen (>24h to cutoff). Five browser-sensor
-families (a11y, keyboard, resize, full walkthrough, slow-connection sizing)
-and now five rounds of test/logic asymmetry hunting have all run clean or
-turned up real fixes. This run's find (a real bug, not just a gap) is a
-stronger signal that the asymmetry-hunting method still has yield than
-"still finding gaps" was --- worth at least one more pass before assuming
-the well is dry:
+Still well inside plan/build/deepen (>24h to cutoff, due noon Mon 17 Aug).
+Six rounds of test/logic asymmetry hunting have now run: five found gaps
+between cooperating functions/tests, this sixth found a bug hiding inside a
+*single* function whose own test fixtures shared a property (uniform
+message size) that masked a whole behaviour branch. That's a genuinely new
+angle, not exhausted yet:
 
-- A future run's asymmetry pass candidates, not yet checked: `buildContext`'s
-  behaviour when a single message's own token count exceeds the window size
-  entirely (does it silently evict everything, leaving the window at 0 used
-  tokens? probably correct given the loop structure, but unverified by any
-  test); whether `approxTokens`'s `Math.max(1, ...)` floor (never 0 tokens
-  for non-empty text) interacts correctly with the meter's percentage math
-  at very small custom messages.
-- Don't re-run a11y/keyboard/resize/full-walkthrough again without a new
-  code change since the last full-walkthrough pass (still `0205305`).
+- A candidate for a future pass, not yet checked: `approxTokens`'s
+  `Math.max(1, ...)` floor combined with the meter's percentage math at very
+  small windows (window=40, single 1-token message = 2.5% width) --- reasoned
+  through informally this run and looks fine (no divide-by-zero, no clamp
+  issue), but not yet backed by an explicit test the way the eviction
+  contiguity invariant now is.
+- More generally: for any other pure function in `context.ts`/`main.ts`
+  whose existing tests all happen to share an unexamined property (not just
+  uniform size --- e.g. all-ASCII text, all-positive numbers, all messages
+  from the fixed fact/filler set rather than composer free text), ask what
+  varying that property does before assuming "well tested" means "correctly
+  general."
+- Five browser-sensor families (a11y, keyboard, resize, full walkthrough,
+  slow-connection sizing) all still stand from `0205305` and earlier ---
+  this run's fix was pure logic in `context.ts`/`spec/context.test.ts` with
+  no DOM/markup change, so none of those needed re-running per the existing
+  "only re-run after a DOM-observable change" rule. Don't re-run them again
+  without a new DOM-affecting change since `0205305`.
 - Don't reopen the pin-mechanic or slow-connection scoping questions (both
   reasoned through and recorded in the project's `CLAUDE.md`).
 - The real remaining work before finishing is `PROCESS.md` (400--600 words,
   3--4 moments) and `reflections/assignment-1.md` --- both still correctly
-  untouched at this distance from cutoff. This run's case-sensitivity bug
-  fix is now a strong PROCESS.md candidate alongside the earlier
-  `role=group` a11y fix, the DOM-reconciliation animation rewrite, the
-  `"them"` dead-field removal, and the two earlier asymmetry finds (widening
-  window, meter/announcement + shared-fixture isolation bug) --- it's the
-  cleanest "found a real defect via method, not luck" moment so far. Start
+  untouched at this distance from cutoff. This run's contiguous-eviction bug
+  is now the strongest PROCESS.md candidate of all the asymmetry finds so
+  far --- it's a defect in the demo's own central, explicitly-stated claim,
+  caught by a genuinely new diagnostic move (varying a property every
+  existing test fixture shared), not just "found via testing." Alongside it:
+  the `role=group` a11y fix, the DOM-reconciliation animation rewrite, the
+  `"them"` dead-field removal, and the case-sensitivity bug. Start
   PROCESS.md/reflection only once inside roughly the last 24--48h, or once a
   future run judges the commit history genuinely settled.
 - `comp4020-crit2-dachi` remains finished, green, and pushed as of the last
