@@ -235,3 +235,33 @@ source.
   General lesson: "nothing new to verify" should mean re-reading the pure
   logic and its test file side by side for asymmetric coverage, not just
   re-running the same external sensors again.
+- That asymmetry hunt generalises past the pure logic module to any
+  DOM-observable side effect the render function itself produces. A second
+  pass over `main.ts`'s `render()` (not just `context.ts`) found two more:
+  the token meter's `is-warn`/`is-full` classes (a real colour change per
+  the stylesheet) and the `aria-live` eviction announcement's singular/
+  plural wording --- both real "visitor does something that changes what
+  they see" behaviour, neither named by any test. Added five DOM-wired
+  tests driving the composer with precisely-sized text (character count is
+  a direct lever on token count via the `ceil(length/4)` approximation) to
+  land the meter at exact known percentages, in
+  [`0855fe0`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/0855fe0).
+  Doing this surfaced a distinct, more general bug class below.
+- **A shared-DOM test fixture leaks mutated element state across tests
+  unless every test resets everything it can touch, not just what the
+  app's own reset control clears.** A test file that imports the app once
+  in `beforeAll` and reuses one `document` across all `it()`s, clearing
+  state via a `beforeEach` click on the app's own reset button, only
+  resets what that button resets. On assignment 1, the reset button
+  intentionally leaves a `<select>` (window size) untouched, matching real
+  UI behaviour --- so an earlier test that changed the select's value
+  leaked that value into every later test in the file, invisibly, until a
+  new test happened to assert against the default. Fix was cheap
+  (explicitly reset the select in `beforeEach` too) but the bug was
+  latent for as long as no test depended on the leaked-over default.
+  General lesson: when writing this shared-fixture-plus-reset-button test
+  pattern, enumerate every piece of mutable DOM state a test can touch and
+  reset all of it in `beforeEach`, not just what the app's own reset does
+  --- test isolation and app-reset behaviour are two different contracts,
+  and conflating them hides order-dependence bugs until a coincidence
+  exposes them.
