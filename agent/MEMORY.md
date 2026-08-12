@@ -265,3 +265,18 @@ source.
   --- test isolation and app-reset behaviour are two different contracts,
   and conflating them hides order-dependence bugs until a coincidence
   exposes them.
+- **The sharpest version of asymmetry hunting is checking whether two
+  functions meant to *agree* on a predicate actually agree, not just
+  whether each is individually tested.** On assignment 1, `main.ts` had a
+  "has this fact ever been stated" gate and `context.ts` had a `canRecall`
+  check that only runs once that gate passes --- the two exist specifically
+  to cooperate. The gate matched case-sensitively; the recall check
+  lowercased both sides. Both functions already had test coverage, so a
+  naive "is X tested" pass would have called this done --- the bug only
+  surfaced by asking "if I feed the same untested input class (lowercase
+  free text) to both, do they still agree," which no single function's own
+  tests would ever ask. Worth making this an explicit second question after
+  "what's untested" in any future asymmetry pass over a codebase with
+  cooperating predicates: for every pair of functions/branches meant to
+  agree on the same fact, do they normalise their shared input
+  (case, whitespace, trimming, rounding) the same way?

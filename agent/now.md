@@ -1,85 +1,72 @@
-# Hand-off --- assignment 1, meter/announcement test coverage
+# Hand-off --- assignment 1, a real bug found by asymmetry hunting
 
 ## State
 
-`comp4020-ass1-dachi`: ~117h to cutoff at run start (due noon Mon 17 Aug
-2026), still plan/build/deepen, not finishing. The prototype ("The
-Forgetting Machine") is content-complete, `pnpm check` green (36/36 after
-this run's additions), `PROCESS.md` and `reflections/assignment-1.md` still
-correctly untouched --- still nowhere near "settled commit history."
+`comp4020-ass1-dachi`: ~111h to cutoff at run start (due noon Mon 17 Aug
+2026), still plan/build/deepen, not finishing. Prototype ("The Forgetting
+Machine") content-complete, `pnpm check` green (38/38 after this run),
+`PROCESS.md` and `reflections/assignment-1.md` still correctly untouched.
 
 ## What I did this run
 
-Followed the last hand-off's instruction directly: rather than re-running
-any exhausted browser sensor (a11y, keyboard, resize, full walkthrough,
-slow-connection sizing --- all untouched this run) or reopening a settled
-scoping question (pin mechanic, slow-connection), I re-read `main.ts`'s
-`render()` function fresh, looking for the same class of logic/test
-asymmetry the previous run found in `context.ts`.
+Followed the previous hand-off's named next action: a fifth asymmetry pass
+over `context.ts`/`main.ts` against their tests, specifically the two
+candidates it flagged as unverified (not yet known bugs) --- the
+composer-preview reset to "≈ 0 tokens" after submit, and
+`factEverStated`'s case-sensitivity vs `canRecall`'s case-insensitivity.
 
-Found two: the token meter's `is-warn`/`is-full` classes (confirmed via
-`styles.css` that these drive a real colour change, not decoration) and the
-`aria-live` eviction-announcement text's singular/plural wording. Both are
-real "visitor does something that changes what they see" behaviour with
-zero test coverage. Added five DOM-wired tests to
-`spec/interaction.test.ts`, driving the composer with precisely-sized
-custom text (character count is a direct, exact lever on token count via
-`ceil(length/4)`) to land the meter at known percentages rather than
-depending on the quick-add buttons' incidental text length.
+The second one was a **real bug**, not just a coverage gap: `main.ts`'s
+"has the fact ever been stated" gate matched `FACT_NEEDLE` case-
+sensitively, while `context.ts`'s `canRecall` (which only runs once that
+gate passes) lowercases both sides. A visitor who typed the fact via the
+free-text composer in lowercase ("my name is iris") would see a permanent
+"Nothing yet" forever --- the case-sensitive gate would never even reach
+the case-insensitive check that would have found it. This was invisible
+before because the only way the demo's own UI states the fact is the
+quick-add button, which always sends the fixed-case string "Iris" ---
+the bug only reachable via the composer, an input surface the existing
+tests exercised for other reasons but never with this specific content.
 
-Writing those tests surfaced a real, distinct bug: the shared-DOM test
-fixture (one `document`, one `import("../main")` in `beforeAll`, state
-cleared via clicking the app's own reset button in `beforeEach`) never
-reset the window-size `<select>`, so the pre-existing "widening the
-window" test left it at `"200"` and that value silently leaked into every
-test that ran after it in file order --- invisible until my new tests
-depended on the 80-token default and failed with confusing numbers. Fixed
-by having `beforeEach` also reset the select and dispatch `change`. This
-is a real, previously-invisible test-isolation gap, not a contrived one.
-
-Committed as two commits (spec tests + isolation fix together, since the
-fix was discovered by and only needed for the new tests; then a separate
-`CLAUDE.md` commit recording both lessons) and pushed:
-[`0855fe0`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/0855fe0),
-[`a37f2fa`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/a37f2fa).
-Working tree clean, 36/36 tests green, `pnpm check` fully green.
-
-Recorded both the generalised asymmetry-hunting lesson (past pure logic
-into `render()`'s DOM side effects) and the shared-fixture test-isolation
-lesson in this agent's own `MEMORY.md` --- the isolation lesson especially
-is likely to recur in any future prototype using the same
-import-once-and-reset-via-button test pattern.
+Fixed by lowercasing both sides of the gate to match `canRecall`
+(`330e514`), with a DOM test driving the composer with a lowercased
+custom message. Also added the composer-preview-reset test that had been
+flagged unverified but turned out correct as written (`14d6257`). Recorded
+the bug and the generalised lesson --- side-by-side reading for where two
+functions meant to *agree* on a predicate could silently *disagree*, not
+just whether each is individually tested --- in this repo's own
+`CLAUDE.md` (`80be074`). Pushed all three commits; working tree clean,
+38/38 tests, `pnpm check` fully green.
 
 ## Next action
 
-Still well inside the plan/build/deepen window (>24h to cutoff, currently
-~117h). Artefact is in strong shape: five browser-sensor families plus a
-test suite now covering both eviction directions and the meter/
-announcement feedback, all found via the same "re-read the actual code
-next to its tests" method rather than re-running fixed checks.
+Still well inside plan/build/deepen (>24h to cutoff). Five browser-sensor
+families (a11y, keyboard, resize, full walkthrough, slow-connection sizing)
+and now five rounds of test/logic asymmetry hunting have all run clean or
+turned up real fixes. This run's find (a real bug, not just a gap) is a
+stronger signal that the asymmetry-hunting method still has yield than
+"still finding gaps" was --- worth at least one more pass before assuming
+the well is dry:
 
+- A future run's asymmetry pass candidates, not yet checked: `buildContext`'s
+  behaviour when a single message's own token count exceeds the window size
+  entirely (does it silently evict everything, leaving the window at 0 used
+  tokens? probably correct given the loop structure, but unverified by any
+  test); whether `approxTokens`'s `Math.max(1, ...)` floor (never 0 tokens
+  for non-empty text) interacts correctly with the meter's percentage math
+  at very small custom messages.
 - Don't re-run a11y/keyboard/resize/full-walkthrough again without a new
-  code change.
+  code change since the last full-walkthrough pass (still `0205305`).
 - Don't reopen the pin-mechanic or slow-connection scoping questions (both
   reasoned through and recorded in the project's `CLAUDE.md`).
-- Before assuming there's nothing left to build in a future run, do
-  another asymmetry pass: re-read `context.ts`, `main.ts`, and their test
-  files side by side once more for anything still untested (candidates not
-  yet checked: the composer-preview reset to "≈ 0 tokens" after submit,
-  the `factEverStated` case-sensitivity vs `canRecall`'s case-insensitivity
-  --- probably not bugs, but unverified). Only fall back to a repeat sensor
-  pass once a fresh read turns up nothing.
-- The real remaining work before finishing is `PROCESS.md` (400--600
-  words, 3--4 moments, favouring harness-level corrections over retries ---
-  strong candidates now include: the `role=group` a11y fix, the
-  DOM-reconciliation animation rewrite plus its pinning regression test,
-  the `"them"` dead-field removal, the widening-window asymmetry find, and
-  now this run's meter/announcement asymmetry find plus the shared-fixture
-  isolation bug it exposed --- that last one is a genuine "corrected the
-  harness, not just retried" moment worth strong consideration for
-  `PROCESS.md`) and `reflections/assignment-1.md` --- both still correctly
-  untouched at this distance from cutoff. Start those only once inside
-  roughly the last 24--48h, or once a future run judges the commit history
-  genuinely settled.
+- The real remaining work before finishing is `PROCESS.md` (400--600 words,
+  3--4 moments) and `reflections/assignment-1.md` --- both still correctly
+  untouched at this distance from cutoff. This run's case-sensitivity bug
+  fix is now a strong PROCESS.md candidate alongside the earlier
+  `role=group` a11y fix, the DOM-reconciliation animation rewrite, the
+  `"them"` dead-field removal, and the two earlier asymmetry finds (widening
+  window, meter/announcement + shared-fixture isolation bug) --- it's the
+  cleanest "found a real defect via method, not luck" moment so far. Start
+  PROCESS.md/reflection only once inside roughly the last 24--48h, or once a
+  future run judges the commit history genuinely settled.
 - `comp4020-crit2-dachi` remains finished, green, and pushed as of the last
   check; no action needed there unless its live URL status changes.
