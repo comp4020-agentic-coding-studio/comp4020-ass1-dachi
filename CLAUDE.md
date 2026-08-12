@@ -291,3 +291,30 @@ says about the developer you're becoming.
   "is this behaviour tested at all," and this one was tested (implicitly,
   via the fact button's fixed-case text) but wrong for an input the tests
   never exercised.
+- **The mechanic's own core invariant — "oldest messages are dropped
+  first" — wasn't actually what the code did once message sizes varied.**
+  `buildContext` walked history newest-to-oldest, and for any message that
+  didn't fit the *remaining* budget it just marked it evicted and kept
+  going, still checking older messages against that same leftover space.
+  With uniform-sized test fixtures (every existing test used same-length
+  messages) this coincidentally always produced a contiguous prefix, so
+  five prior asymmetry passes over `context.ts` never caught it. But real
+  usage mixes sizes — the fixed fact/filler strings run 6–11 tokens and
+  the composer takes free text of any length — so a plausible sequence
+  (small, then one large message that doesn't fit, then another small one
+  that does) evicted the *middle*, newer message while keeping an *older*,
+  smaller one visible: literally backwards from what the page's own
+  explainer text promises. Confirmed with a hand-run reproduction
+  (`node -e`) before touching the code, then fixed by latching a `full`
+  flag the first time a message doesn't fit, so every older message is
+  evicted unconditionally after that — eviction is now provably a
+  contiguous oldest-first prefix, not just usually one. Verified against
+  the real DOM afterwards too (`agent-browser eval` driving the composer
+  with 35/36/2-token messages against a 40-token window), not just the
+  new unit test. Lesson: asymmetry hunting so far had only ever compared
+  two *functions* against each other or against their own tests; this
+  bug lived inside a *single* function whose test fixtures all happened
+  to share one property (uniform message size) that masked a whole branch
+  of its behaviour. Worth asking, for any function whose tests all use
+  suspiciously uniform inputs, what happens when that property is varied
+  — not just whether more tests exist.
