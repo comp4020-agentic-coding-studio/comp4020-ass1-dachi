@@ -247,3 +247,30 @@ says about the developer you're becoming.
   small clears even a throttled 3G link in a fraction of a second, so the
   real risk was never throughput. Revisit only if a future page picks up
   real weight (images, more script).
+- **Logic/test asymmetry hunting generalises past `context.ts` to any
+  DOM-observable side effect `render()` produces.** After the widening-window
+  gap (see `38999e4`), re-reading `render()` itself (not just the pure
+  functions it calls) surfaced two more untested-but-real behaviours: the
+  token meter's `is-warn`/`is-full` classes (which drive an actual colour
+  change per `styles.css`) and the `aria-live` eviction-announcement text's
+  singular/plural wording. Neither is exercised by `context.test.ts` (pure
+  logic, no DOM) or by the earlier `interaction.test.ts` cases (which only
+  check the recall answer and column membership, not the meter or the
+  announcement). Added five DOM-wired tests driving the composer with
+  precisely-sized custom text (`approxTokens` is `ceil(length/4)`, so a
+  known character count lands the meter at a known percentage) rather than
+  the quick-add buttons, whose text length isn't chosen for this purpose.
+- **A shared-DOM test fixture leaks mutated element state across tests
+  unless every test explicitly resets it.** `interaction.test.ts` imports
+  `main.ts` once in `beforeAll` and reuses one `document` across all tests,
+  with `beforeEach` clicking the reset button to clear message history. But
+  the reset button (by design — matches real usage) doesn't touch the
+  window-size `<select>`, so the existing "widening the window" test left it
+  at `"200"` and every later test in the file silently ran against a 200-
+  not 80-token window. Invisible until a new test asserted against the
+  80-token default. Fixed by having `beforeEach` also reset the select's
+  value and dispatch `change`. General lesson for any future test file using
+  this same shared-fixture-plus-reset-button pattern: enumerate every piece
+  of DOM state a test can mutate (not just the one the app's own reset
+  clears) and reset all of it in `beforeEach`, or order-dependence bugs stay
+  latent until some later test happens to depend on the default.
