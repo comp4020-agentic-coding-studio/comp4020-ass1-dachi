@@ -30,6 +30,13 @@ describe("the context-window demo, wired up", () => {
 
   beforeEach(() => {
     click('[data-testid="reset-demo"]');
+    // The reset button only clears history (matching real UI behaviour —
+    // resetting a demo mid-conversation shouldn't silently change your window
+    // size choice too), so a test that changes the select, like the widening
+    // one below, would otherwise leak its value into every later test.
+    const select = document.querySelector<HTMLSelectElement>('[data-testid="window-size-select"]')!;
+    select.value = "80";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
   it("says nothing has been shared before any message is sent", () => {
@@ -94,5 +101,51 @@ describe("the context-window demo, wired up", () => {
 
     expect(text('[data-testid="recall-answer"]')).toMatch(/iris/i);
     expect(document.querySelectorAll('[data-testid="evicted-messages"] li')).toHaveLength(0);
+  });
+
+  // The 80-token default window makes an exact percentage easy to hit: a
+  // message of N characters is ceil(N/4) tokens (see approxTokens), so
+  // sending one custom message of a chosen length lands the meter at a known
+  // occupancy without depending on the filler text's own length.
+  function sendCustom(charLength: number): void {
+    const input = document.querySelector<HTMLTextAreaElement>('[data-testid="composer-input"]')!;
+    input.value = "a".repeat(charLength);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector<HTMLFormElement>('[data-testid="composer-form"]')!.requestSubmit();
+  }
+
+  function meterClasses(): DOMTokenList {
+    return document.querySelector('[data-testid="token-meter-fill"]')!.classList;
+  }
+
+  it("leaves the meter unmarked well below the window's budget", () => {
+    sendCustom(160); // 40 tokens of 80 -> 50%
+    expect(meterClasses().contains("is-warn")).toBe(false);
+    expect(meterClasses().contains("is-full")).toBe(false);
+  });
+
+  it("marks the meter as warning once usage crosses 70%", () => {
+    sendCustom(240); // 60 tokens of 80 -> 75%
+    expect(meterClasses().contains("is-warn")).toBe(true);
+    expect(meterClasses().contains("is-full")).toBe(false);
+  });
+
+  it("marks the meter as full once usage crosses 95%", () => {
+    sendCustom(312); // 78 tokens of 80 -> 97.5%
+    expect(meterClasses().contains("is-full")).toBe(true);
+    expect(meterClasses().contains("is-warn")).toBe(false);
+  });
+
+  it("announces a single eviction in the singular", () => {
+    sendCustom(280); // 70 tokens, fits alone
+    sendCustom(80); // 20 tokens; pushes the first message out on its own
+    expect(text('[data-testid="eviction-announcement"]')).toMatch(/^one message just fell/i);
+  });
+
+  it("announces a simultaneous multi-message eviction in the plural", () => {
+    sendCustom(40); // message A, 10 tokens
+    sendCustom(40); // message B, 10 tokens
+    sendCustom(300); // message C, 75 tokens; evicts A and B in the same render
+    expect(text('[data-testid="eviction-announcement"]')).toMatch(/^2 messages just fell/i);
   });
 });
