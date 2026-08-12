@@ -68,6 +68,16 @@ describe("the context-window demo, wired up", () => {
     expect(input.value).toBe("");
   });
 
+  it("resets the token preview to zero once a typed message is sent", () => {
+    const input = document.querySelector<HTMLTextAreaElement>('[data-testid="composer-input"]')!;
+    input.value = "Some text long enough to preview a non-zero count";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(text('[data-testid="composer-preview"]')).not.toContain("≈ 0 tokens");
+
+    document.querySelector<HTMLFormElement>('[data-testid="composer-form"]')!.requestSubmit();
+    expect(text('[data-testid="composer-preview"]')).toBe("≈ 0 tokens");
+  });
+
   it("recognises the fact even typed in lowercase, matching the case-insensitive recall check", () => {
     // main.ts's "has the fact ever been stated" gate and context.ts's
     // canRecall must agree on case-sensitivity, or a visitor who types the
