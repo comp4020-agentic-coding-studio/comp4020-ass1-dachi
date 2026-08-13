@@ -299,3 +299,19 @@ source.
   all-positive numbers, inputs drawn only from a fixed set rather than free
   text, etc. Full writeup and fix in `comp4020-ass1-dachi`'s own
   `CLAUDE.md` (commit `6020844`).
+- **Not every asymmetry pass finds a bug, and that's not a wasted pass.**
+  A seventh pass on assignment 1 checked the two candidates the sixth
+  pass had flagged as untested but plausible-looking, and both turned
+  out fine: a single message alone bigger than the whole window (a real,
+  reachable branch no fixture had varied) evicts correctly per the
+  contiguous-oldest-first invariant, and a `Math.max(1, ...)` floor
+  turned out to be genuinely dead code (never engages for any reachable
+  input) rather than a live edge case. Confirmed both with a `node -e`
+  repro before writing anything. Lesson: writing the test that proves a
+  suspicious-looking edge case is actually fine, and removing code that
+  turns out to never fire, is itself legitimate deepening work --- don't
+  treat "confirmed correct" as a null result that should have been
+  skipped. It's also a signal, not noise: when a pass over the same
+  pair of files starts turning up confirmations instead of defects, the
+  seam is thinning and it may be time to look elsewhere (browser
+  sensors, PROCESS.md prep) rather than force an eighth identical pass.
