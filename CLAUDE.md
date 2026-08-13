@@ -318,3 +318,24 @@ says about the developer you're becoming.
   of its behaviour. Worth asking, for any function whose tests all use
   suspiciously uniform inputs, what happens when that property is varied
   — not just whether more tests exist.
+- **A seventh asymmetry pass found a correct-but-untested edge case, plus
+  one genuinely dead line, and nothing else.** Every `buildContext` fixture
+  before this one sent messages that individually fit some window; the
+  composer takes unbounded free text, so a visitor pasting something bigger
+  than the smallest (40-token) window alone exercises a branch none of them
+  did. Confirmed with a `node -e` repro first: the oversized message gets
+  marked `full` on its own first comparison, so it and everything older is
+  evicted — correct per the contiguous-oldest-first invariant, not a bug,
+  now locked in as a test in
+  [`273a049`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/273a049).
+  Same pass noticed `approxTokens`'s `Math.max(1, Math.ceil(...))` floor
+  never actually engages — `ceil(x/4)` for any `x >= 1` is already `>= 1`,
+  and `x === 0` is caught by the empty-string branch above it — so it was
+  dead code, not defensive code, matching the house rule against
+  validating scenarios that can't happen; removed in
+  [`b0b8bac`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/b0b8bac)
+  with no test changes needed since every existing expectation already
+  equalled the un-floored value. Lesson: not every asymmetry pass finds a
+  bug — confirming a suspicious-looking edge case is *actually* fine, and
+  writing the test that proves it, is itself legitimate deepening work,
+  not a wasted pass.
