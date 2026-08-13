@@ -171,4 +171,20 @@ describe("the context-window demo, wired up", () => {
     sendCustom(300); // message C, 75 tokens; evicts A and B in the same render
     expect(text('[data-testid="eviction-announcement"]')).toMatch(/^2 messages just fell/i);
   });
+
+  it("replaces a stale eviction announcement once widening brings messages back", () => {
+    // Without this, the sr-only aria-live region would keep announcing "N
+    // messages just fell out" even after widening restored them — a stale,
+    // now-false claim a screen-reader user browsing the page could still
+    // land on and hear.
+    click('[data-testid="quick-add-fact"]');
+    for (let i = 0; i < 10; i++) click('[data-testid="quick-add-filler"]');
+    expect(text('[data-testid="eviction-announcement"]')).toMatch(/just fell/i);
+
+    const select = document.querySelector<HTMLSelectElement>('[data-testid="window-size-select"]')!;
+    select.value = "200";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(text('[data-testid="eviction-announcement"]')).toMatch(/became visible again/i);
+  });
 });

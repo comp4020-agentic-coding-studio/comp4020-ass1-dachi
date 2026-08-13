@@ -133,11 +133,23 @@ function render(): void {
 
   const evictedIds = new Set(evicted.map((m) => m.id));
   const newlyEvicted = evicted.filter((m) => !previousEvictedIds.has(m.id));
-  if (announcement && newlyEvicted.length > 0) {
-    announcement.textContent =
-      newlyEvicted.length === 1
-        ? "One message just fell out of the context window."
-        : `${newlyEvicted.length} messages just fell out of the context window.`;
+  const newlyRestored = [...previousEvictedIds].filter((id) => !evictedIds.has(id));
+  if (announcement) {
+    if (newlyEvicted.length > 0) {
+      announcement.textContent =
+        newlyEvicted.length === 1
+          ? "One message just fell out of the context window."
+          : `${newlyEvicted.length} messages just fell out of the context window.`;
+    } else if (newlyRestored.length > 0) {
+      // The window-size select can widen as well as shrink (see the
+      // "widening the window" test in context.test.ts), so a message can
+      // come back into view — without this branch the sr-only region would
+      // keep announcing a stale "fell out" claim after the fact returned.
+      announcement.textContent =
+        newlyRestored.length === 1
+          ? "One message became visible again."
+          : `${newlyRestored.length} messages became visible again.`;
+    }
   }
   previousEvictedIds = evictedIds;
 }
