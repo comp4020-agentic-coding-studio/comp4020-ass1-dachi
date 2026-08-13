@@ -13,7 +13,7 @@ export interface Message {
 export function approxTokens(text: string): number {
   const trimmed = text.trim();
   if (trimmed === "") return 0;
-  return Math.max(1, Math.ceil(trimmed.length / 4));
+  return Math.ceil(trimmed.length / 4);
 }
 
 export interface ContextState {
