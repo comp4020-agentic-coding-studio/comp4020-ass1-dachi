@@ -66,6 +66,20 @@ describe("buildContext", () => {
     expect(evicted.map((m) => m.id)).toEqual([1, 2]);
   });
 
+  it("evicts a single message that alone is bigger than the whole window, including itself", () => {
+    // Every other fixture here sends messages that individually fit some
+    // window; the composer takes unbounded free text, so a visitor can
+    // paste something the smallest window (40 tokens) can never hold at
+    // all. Nothing before this test exercises that branch: the newest
+    // message still gets marked "full" on its own first comparison, so it
+    // (and everything older) ends up evicted rather than special-cased.
+    const history = [msg(1, "hi"), msg(2, "x".repeat(500))];
+    const { visible, evicted, usedTokens } = buildContext(history, 40);
+    expect(visible).toHaveLength(0);
+    expect(evicted.map((m) => m.id)).toEqual([1, 2]);
+    expect(usedTokens).toBe(0);
+  });
+
   it("widening the window brings a previously evicted message back into view", () => {
     // Eviction isn't one-directional in the demo: picking a bigger window
     // size re-runs buildContext over the same history, so a message that
