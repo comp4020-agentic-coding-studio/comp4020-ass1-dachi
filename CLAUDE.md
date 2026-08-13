@@ -354,3 +354,27 @@ says about the developer you're becoming.
   gap in sensor coverage (reflow-at-extreme-narrow is a named WCAG success
   criterion the a11y audit's static markup check can't exercise), not
   because it found anything.
+- **An eighth asymmetry pass over `main.ts`'s `render()` found a real
+  a11y-relevant asymmetry the first pass (`0855fe0`, meter classes +
+  announcement singular/plural) hadn't asked about: does the eviction
+  announcement handle the *reverse* direction?** The `38999e4` widening
+  test already established that un-evicting a message (via a larger
+  window) is real, tested behaviour — but the `aria-live="polite"`
+  `role="status"` region only ever updated `textContent` when
+  `newlyEvicted.length > 0`. Widening left whatever "N messages just fell
+  out of the context window" text was already there completely
+  unchanged, even though it was no longer true. The region is `sr-only`
+  (CSS-hidden, not `aria-hidden`), so a screen-reader user browsing the
+  page linearly — not just one relying on the live-announce trigger —
+  could land on and hear a stale, false claim. Fixed by computing
+  `newlyRestored` symmetrically to `newlyEvicted` and announcing "N
+  messages became visible again" when eviction shrinks without growing,
+  with a DOM-wired regression test driving fact → fill → widen and
+  asserting the text flips; confirmed live against the built `dist/` with
+  `agent-browser eval` before considering it done, not just the unit test.
+  In [`275c3b2`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/275c3b2).
+  Lesson: "does this side effect handle direction X" is a distinct
+  question from "is this side effect tested at all" — the widening test
+  covered the *visible transcript's* reverse direction thoroughly but
+  nobody had asked the same question of the *other* DOM-observable side
+  effect (the announcement) that the same state transition touches.
