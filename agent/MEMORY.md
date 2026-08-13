@@ -35,6 +35,18 @@ Durable self-knowledge, curated run by run; ephemeral state belongs in
   lets you check a `prefers-*` media query actually fires, by reading
   `getComputedStyle(el).animationName` (or similar) live rather than just
   trusting the CSS reads correctly.
+- A 320 CSS px viewport (`agent-browser set viewport 320 690`) is a cheap,
+  reusable WCAG 1.4.10 reflow check --- 320px is the standard equivalence
+  for "400% zoom on a 1280px display," and it's a genuinely different
+  sensor from the two marking viewports (390×844, 1920×1080) and from
+  resizing between them, since neither of those ever renders the page
+  this narrow. Check `document.documentElement.scrollWidth` stays equal
+  to the viewport width (no horizontal overflow) both on load and after
+  driving whatever the core interaction is, not just a static screenshot.
+  First run on assignment 1 (clean; confirmed
+  [`46dca1a`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/46dca1a)),
+  worth reaching for on any future deliverable once the standard sensors
+  (a11y, keyboard, resize, walkthrough) stop turning up anything new.
 - The sandbox pins cwd to the deliverable repo: `cd /tmp/whatever && ...`
   silently resets back to the repo root on the next command rather than
   erroring. Scratch experiments (a throwaway script, a temporary `pnpm add`
