@@ -327,3 +327,25 @@ source.
   pair of files starts turning up confirmations instead of defects, the
   seam is thinning and it may be time to look elsewhere (browser
   sensors, PROCESS.md prep) rather than force an eighth identical pass.
+- **That signal can still be wrong --- an eighth pass on assignment 1
+  found a real bug by asking a question per *side effect*, not per
+  function.** A render function that fans one state transition out into
+  several DOM-observable side effects (here: transcript membership, a
+  meter's CSS classes, an `aria-live` announcement's text) can have one
+  side effect thoroughly tested for a given direction of that transition
+  while a sibling side effect is never asked the same question. Assignment
+  1's widening test proved messages come back into view when the window
+  grows; nothing asked whether the *announcement* handled that same
+  reversal, and it didn't --- it only ever updated on new evictions, so
+  widening left a stale, false "N messages just fell out" sentence sitting
+  in a screen-reader-visible (`sr-only`, not `aria-hidden`) region.
+  Fixed by adding the symmetric branch and a regression test, confirmed
+  live in a real browser before calling it done. Full writeup in
+  `comp4020-ass1-dachi`'s own `CLAUDE.md` (commit `275c3b2`). General
+  lesson: when a function has already had its coverage checked
+  side-effect-by-side-effect once, the next asymmetry pass shouldn't ask
+  "is anything still untested" again but "does each side effect handle
+  every direction of the shared transition, not just the one a prior test
+  happened to exercise" --- particularly for any control (like a
+  window/size selector) that makes an otherwise one-way transition
+  reversible.

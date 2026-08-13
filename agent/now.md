@@ -1,72 +1,73 @@
-# Hand-off --- assignment 1, 320px reflow sensor check
+# Hand-off --- assignment 1, eighth asymmetry pass: stale-announcement bug
 
 ## State
 
-`comp4020-ass1-dachi`: ~87h to cutoff at run start (due noon Mon 17 Aug
+`comp4020-ass1-dachi`: ~76h to cutoff at run start (due noon Mon 17 Aug
 2026), still plan/build/deepen, not finishing. Prototype ("The Forgetting
-Machine") content-complete, `pnpm check` green (40/40), `PROCESS.md` and
-`reflections/assignment-1.md` still correctly untouched.
+Machine") content-complete, `pnpm check` green (41/41 after this run),
+`PROCESS.md` and `reflections/assignment-1.md` still correctly untouched.
 
 ## What I did this run
 
-Confirmed the seventh asymmetry pass's read was right: re-reading
-`context.ts`/`main.ts` fresh turned up no new lens over
-`buildContext`/`canRecall`/`render()` worth an eighth pass — no
-suspiciously-uniform test property left unvaried, no pair of cooperating
-functions left unchecked for agreement.
+The previous hand-off explicitly warned against forcing an eighth
+`context.ts`/`main.ts` asymmetry pass without a genuinely new lens. Found
+one anyway by asking a question the earlier meter/announcement pass
+(`0855fe0`) hadn't: does the eviction announcement handle the *reverse*
+direction, symmetric to how the widening test (`38999e4`) already proved
+the visible transcript itself does?
 
-Instead ran a genuinely new browser sensor, distinct from the five
-standing families (a11y, keyboard, resize, full walkthrough,
-slow-connection sizing): a 320 CSS px viewport, the standard equivalence
-for "400% zoom on a 1280px display" per WCAG 1.4.10 (reflow). Neither
-marking viewport (390×844, 1920×1080) nor the resize check (which moves
-*between* those two) ever renders the page this narrow. Served the built
-`dist/`, set `agent-browser` to `320 690`, checked
-`document.documentElement.scrollWidth` stayed at 320 (no horizontal
-overflow) both on load and after driving the full fact → ten
-filler-message → eviction sequence, and screenshotted top/mid/bottom plus
-the populated transcript column. All clean — the existing `@media (width
-<= 640px)` breakpoint and flex-wrapping buttons already cover it, nothing
-to fix. Recorded in the project's `CLAUDE.md`
-([`46dca1a`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/46dca1a)),
-pushed. Working tree clean, `pnpm check` still green (no code touched,
-only `CLAUDE.md`).
+It didn't. `render()`'s `aria-live="polite"` `role="status"` announcement
+region only updated `textContent` when `newlyEvicted.length > 0`. Widening
+the window back (un-evicting messages) left whatever "N messages just fell
+out" text was already there completely unchanged and now false. The region
+is `sr-only` (CSS-hidden, not `aria-hidden`), so a screen-reader user
+browsing linearly, not just one relying on the live-announce trigger,
+could land on and hear the stale claim.
+
+Fixed by computing `newlyRestored` symmetrically to `newlyEvicted` and
+announcing "N messages became visible again" on that branch. Added a
+DOM-wired regression test (fact → fill → widen, assert text flips), then
+confirmed live against the built `dist/` with `agent-browser eval` (typed
+fact → 10 filler clicks → "One message just fell out..." → widen select to
+200 → "2 messages became visible again.") before considering it done —
+not just the unit test. Pushed as
+[`275c3b2`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/275c3b2)
++ [`2e1fac8`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/2e1fac8)
+(CLAUDE.md lesson). `pnpm check` 41/41 green, working tree clean.
+
+No other DOM/markup elements changed (same `sr-only` node, new text
+content only), so the standing five browser-sensor families (a11y,
+keyboard, resize, full walkthrough, slow-connection) weren't re-run in
+full — same standing rule as before, and this change is non-visual so
+none of those would exercise it differently anyway.
 
 ## Next action
 
-Still >24h to cutoff (due noon Mon 17 Aug), so per doctrine this stays
-plan/build/deepen, not finishing. Options for a future run, roughly in
-order of likely value:
+Still >24h to cutoff (due noon Mon 17 Aug; ~76h at this run's start), so
+per doctrine this stays plan/build/deepen for at least one more run.
 
-- Don't force an eighth `context.ts`/`main.ts` asymmetry pass without a
-  genuinely new lens — two passes in a row (seventh, and this run's
-  fresh re-read) have found nothing further there.
-- Don't re-run the five standing browser sensors (a11y, keyboard,
-  resize, full walkthrough, slow-connection) or the new 320px reflow
-  check without a new DOM-affecting change since `46dca1a`.
-- Don't reopen the pin-mechanic or slow-connection scoping questions
-  (both reasoned through and recorded in the project's `CLAUDE.md`).
-- If another genuinely fresh sensor angle surfaces (something not yet
-  named across the whole `CLAUDE.md` history), run it. If nothing does,
-  the honest read is that browser- and logic-level checking is close to
-  exhausted for this content, and the next legitimate work is either (a)
-  a small, judiciously-scoped deepening of the existing single idea (not
-  a second idea — the brief penalises over-scoping) if one genuinely
-  suggests itself, or (b) waiting until closer to the 24--48h mark to
-  start `PROCESS.md`/the reflection.
-- The real remaining work before finishing is `PROCESS.md` (400--600
-  words, 3--4 moments) and `reflections/assignment-1.md` --- both still
-  correctly untouched. Strongest `PROCESS.md` candidates so far, roughly
-  in strength order: the contiguous-eviction bug (`6020844`, a defect in
-  the demo's own central claim, caught by varying a property every
-  fixture shared), the case-sensitivity bug (`330e514`, two cooperating
-  functions silently disagreeing), the `role=group` a11y fix, the
-  DOM-reconciliation animation rewrite, and the `"them"` dead-field
-  removal. This run's find (320px reflow, clean) is real coverage but not
-  a headline moment — a one-line mention at most.
+- This pass shows the "no genuinely new lens left" read from the last two
+  hand-offs was premature --- the productive question turned out to be
+  "does this side effect handle direction X," asked per DOM-observable
+  side effect, not per function. Before assuming render() is exhausted
+  again, check whether any *other* side effect it produces (there were
+  three: transcript membership, meter classes, announcement text) has an
+  un-examined direction or an un-examined interaction with the
+  window-size select specifically, since that's the one control that
+  makes previously-one-way state (eviction) reversible.
+- If a future run re-reads `render()` fresh and finds nothing further
+  there, that's a real signal (not a forced null result) to move to
+  `PROCESS.md`/reflection prep, or to stop touching `context.ts`/`main.ts`
+  and let the content settle.
+- Strongest `PROCESS.md` candidates so far, roughly in strength order: the
+  contiguous-eviction bug (`6020844`), the case-sensitivity bug
+  (`330e514`), this run's stale-announcement bug (`275c3b2`), the
+  `role=group` a11y fix, the DOM-reconciliation animation rewrite. Four
+  is plenty for the 400--600 word budget; this run's find is a solid
+  fourth or fifth citation, not necessarily one to add on top of an
+  already-full set.
 - Start `PROCESS.md`/reflection only once inside roughly the last
   24--48h, or once a future run judges the commit history genuinely
-  settled — we are not there yet at ~87h.
+  settled --- still not there at ~76h.
 - `comp4020-crit2-dachi` remains finished, green, and pushed as of the
-  last check; no action needed there unless its live URL status
-  changes.
+  last check; no action needed there unless its live URL status changes.
