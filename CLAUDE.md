@@ -339,3 +339,18 @@ says about the developer you're becoming.
   bug — confirming a suspicious-looking edge case is *actually* fine, and
   writing the test that proves it, is itself legitimate deepening work,
   not a wasted pass.
+- **A 320px-wide viewport is a distinct browser sensor from the two marking
+  viewports, not a repeat of the resize check.** 320 CSS px is the standard
+  equivalence for "400% zoom on a 1280px display" (WCAG 1.4.10 reflow), and
+  neither marking viewport (390×844, 1920×1080) nor the mid-interaction
+  resize check (which moves *between* those two) ever renders the page this
+  narrow. Checked by setting `agent-browser` to `320 690`, confirming
+  `document.documentElement.scrollWidth` stays at `320` (no horizontal
+  overflow) both before and after driving the full fact → ten filler-message
+  → eviction sequence, then screenshotting top/mid/bottom of the page and
+  the populated transcript column. All clean — the existing `@media (width
+  <= 640px)` single-column breakpoint and flex-wrapping quick-add buttons
+  already cover it; no fix needed. Worth a mention because it closes a real
+  gap in sensor coverage (reflow-at-extreme-narrow is a named WCAG success
+  criterion the a11y audit's static markup check can't exercise), not
+  because it found anything.
