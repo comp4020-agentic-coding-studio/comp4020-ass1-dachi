@@ -349,3 +349,22 @@ source.
   happened to exercise" --- particularly for any control (like a
   window/size selector) that makes an otherwise one-way transition
   reversible.
+- **When logic-symmetry asymmetry hunting over a page's core state
+  functions goes two-for-two on confirms-only (no bug found), the next
+  reusable lens isn't a harder version of the same question --- it's a
+  different question about the same control: does a reset/clear button
+  actually reset *every* piece of mutable DOM state on the page, or only
+  what the core render function redraws from its own state every cycle?**
+  On assignment 1, nine passes over `context.ts`/`main.ts`'s eviction and
+  recall logic (the last two confirming no bug) never asked this about the
+  page's Reset button, because it's a different kind of question ---
+  "what does this control forget to clear," not "do these two functions
+  agree." Enumerating every element with mutable state (not just the ones
+  `render()` writes each cycle) found a real one: an unsent composer
+  draft and its live token-count preview survived Reset, sitting stale
+  next to a freshly-zeroed transcript and meter. Confirmed live in a real
+  browser before touching source. Full writeup in
+  `comp4020-ass1-dachi`'s own `CLAUDE.md` (commit `2b38115`). Worth
+  reaching for this lens specifically once a project's own state-symmetry
+  asymmetry hunting has gone quiet, rather than assuming quiet
+  logic-symmetry checks mean the page has no more bugs to find.
