@@ -397,3 +397,18 @@ says about the developer you're becoming.
   but look at other sensors (a full browser sweep, the response-to-brief
   criterion's content/scope, or starting `PROCESS.md`/reflection prep
   once inside 24–48h) instead.
+- **Took that ninth pass's own advice and re-ran the full browser-sensor
+  family (a11y, keyboard, mid-interaction resize, screenshot walkthrough
+  at both marking viewports) for the first time since three real logic
+  changes landed** (`6020844` contiguous eviction, `330e514`
+  case-sensitivity, `275c3b2` stale announcement) — the last full sweep
+  predates all three. All clean: `agent-browser a11y --json` returned
+  `{violations: 0, incomplete: 0}`; `press Tab` through the page matches
+  DOM order (nav link → select → three quick-add buttons → composer →
+  send); `press Enter` on a focused reset button fires it; state and
+  layout both survive a 1920×1080→390×844→1920×1080 resize mid-eviction;
+  screenshots at both viewports after filling the window show the
+  strikethrough "Forgotten" column, the red recall failure, and no
+  horizontal overflow. Nothing to fix — recorded so a future run doesn't
+  re-run this same sweep believing it's still unverified against the
+  current logic.
