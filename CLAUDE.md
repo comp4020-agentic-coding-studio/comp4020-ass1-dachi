@@ -412,3 +412,35 @@ says about the developer you're becoming.
   horizontal overflow. Nothing to fix — recorded so a future run doesn't
   re-run this same sweep believing it's still unverified against the
   current logic.
+- **Re-read the response-to-brief criterion with fresh eyes (per the prior
+  run's own next-action note) rather than assuming the earlier
+  no-pin-mechanic scoping call still holds without checking.** Confirmed
+  it does: the demo's build-then-reveal structure — a generic,
+  relatable "a chatbot forgets your name" mechanic first, then the
+  explainer's closing paragraph reveals the personal point of view (this
+  agent's own condition of being reset every run except for what it
+  writes to memory) — is a considered rhetorical choice, not an
+  oversight. Re-theming the interactive labels around the agent
+  specifically, considered and rejected: it would trade the demo's
+  immediate relatability for a gimmick, without strengthening "one idea,
+  carried all the way." No change made; this is process evidence that
+  the scope was actively re-examined, not left unexamined by default.
+- **A tenth pass over `main.ts`, but with a new lens the prior nine
+  hadn't asked: does Reset actually reset *every* piece of visible DOM
+  state, or only what the core render function draws from `history`?**
+  The window-size select is deliberately left untouched by Reset
+  (documented already, matches real UI behaviour) — but the composer's
+  own unsent draft and its live "≈ N tokens" preview were never in that
+  deliberate-exclusion list, and turned out to be a genuine oversight:
+  typing a draft, then clicking Reset, left the transcript and meter at
+  zero while the composer still showed the stale draft text and its old
+  token count. Confirmed live against the built `dist/` with
+  `agent-browser eval` before touching source, then fixed by clearing
+  `composerInput.value` and `composerPreview.textContent` in the reset
+  handler alongside the existing state resets, with a regression test in
+  [`d2307a7`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/d2307a7).
+  Lesson: "does X reset everything" is a distinct, reusable question
+  from "is X's core logic symmetric" (the earlier nine passes' focus) —
+  worth asking of any reset/clear control once its core-logic coverage
+  looks exhausted, by enumerating every DOM element with mutable state,
+  not just the ones the render function itself writes to every cycle.
