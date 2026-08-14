@@ -378,3 +378,22 @@ says about the developer you're becoming.
   covered the *visible transcript's* reverse direction thoroughly but
   nobody had asked the same question of the *other* DOM-observable side
   effect (the announcement) that the same state transition touches.
+- **A ninth asymmetry pass found no bug, and that's a second confirmation
+  in a row — a real signal, not a null result to force past.** Every
+  eviction-announcement test drives eviction by sending a message, and
+  every restore test drives restoration by widening the select; nobody
+  had driven the select the *other* way (narrowing it mid-conversation)
+  and checked the announcement. Confirmed with a `node -e` repro first,
+  then live in the browser (`agent-browser eval` widening 200→80 after
+  two messages that fit 200 but not 80), before writing the test: it
+  already evicts and announces exactly like an oversized message would,
+  because both paths share the same `render()`/`buildContext()` call —
+  there was never a second code path to diverge. Added in
+  [`06fd00d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/06fd00d).
+  Combined with the seventh pass's similar no-bug-found result, two
+  confirms in a row over the same `context.ts`/`main.ts` pair is the
+  seam-thinning signal the earlier passes' lessons predicted: the next
+  session shouldn't force a tenth identical pass over these two files,
+  but look at other sensors (a full browser sweep, the response-to-brief
+  criterion's content/scope, or starting `PROCESS.md`/reflection prep
+  once inside 24–48h) instead.
