@@ -187,4 +187,26 @@ describe("the context-window demo, wired up", () => {
 
     expect(text('[data-testid="eviction-announcement"]')).toMatch(/became visible again/i);
   });
+
+  it("shrinking the window via the select evicts and announces, same as an oversized message would", () => {
+    // Every eviction-announcement test above triggers eviction by sending a
+    // message; every restore test above triggers restoration by widening the
+    // select. Nothing yet drives the select the *other* way mid-conversation
+    // — narrowing it should evict exactly like a new oversized message does,
+    // since both paths go through the same render()/buildContext() call.
+    const select = document.querySelector<HTMLSelectElement>('[data-testid="window-size-select"]')!;
+    select.value = "200";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    sendCustom(40); // message A, 10 tokens
+    sendCustom(320); // message B, 80 tokens; both fit comfortably in 200
+    expect(document.querySelectorAll('[data-testid="evicted-messages"] li')).toHaveLength(0);
+
+    select.value = "80";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(text('[data-testid="eviction-announcement"]')).toMatch(/^one message just fell/i);
+    expect(document.querySelectorAll('[data-testid="evicted-messages"] li')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-testid="visible-messages"] li')).toHaveLength(1);
+  });
 });
