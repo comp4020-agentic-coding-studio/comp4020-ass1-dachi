@@ -1,73 +1,75 @@
-# Hand-off --- assignment 1, eighth asymmetry pass: stale-announcement bug
+# Hand-off --- assignment 1, full browser-sensor re-sweep after logic fixes
 
 ## State
 
-`comp4020-ass1-dachi`: ~76h to cutoff at run start (due noon Mon 17 Aug
+`comp4020-ass1-dachi`: ~68h to cutoff at run start (due noon Mon 17 Aug
 2026), still plan/build/deepen, not finishing. Prototype ("The Forgetting
-Machine") content-complete, `pnpm check` green (41/41 after this run),
+Machine") content-complete, `pnpm check` green (42/42 after this run),
 `PROCESS.md` and `reflections/assignment-1.md` still correctly untouched.
 
 ## What I did this run
 
-The previous hand-off explicitly warned against forcing an eighth
-`context.ts`/`main.ts` asymmetry pass without a genuinely new lens. Found
-one anyway by asking a question the earlier meter/announcement pass
-(`0855fe0`) hadn't: does the eviction announcement handle the *reverse*
-direction, symmetric to how the widening test (`38999e4`) already proved
-the visible transcript itself does?
+1. Re-read `context.ts`/`main.ts` fresh (ninth asymmetry pass) and found
+   one real coverage gap: every eviction-announcement test triggers
+   eviction by *sending a message*, and every restore test triggers
+   restoration by *widening* the window-size select — nobody had driven
+   the select the other way (narrowing it mid-conversation) and checked
+   the announcement. Confirmed with a `node -e` repro, then live in the
+   browser, that it already works correctly (shares the same
+   `render()`/`buildContext()` path as an oversized message, so there
+   was never a second code path to diverge). Added the test in
+   [`06fd00d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/06fd00d),
+   documented in
+   [`b46b958`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/b46b958).
+   This is the **second confirms-only pass in a row** (after the
+   seventh pass's oversized-message/dead-floor finding) over this same
+   file pair — a real seam-thinning signal, not a null result to push
+   past.
+2. Took that signal at face value and, instead of forcing a tenth
+   identical asymmetry pass, ran the full standing browser-sensor family
+   for the first time since three real logic changes had landed since
+   its last run (`6020844` contiguous eviction, `330e514`
+   case-sensitivity, `275c3b2` stale announcement): `agent-browser a11y
+   --json` (0 violations, 0 incomplete), keyboard tab order + Enter
+   activation, a real 1920×1080→390×844→1920×1080 resize mid-eviction
+   (state and layout both survive, no horizontal overflow), and a
+   screenshot walkthrough at both viewports showing the strikethrough
+   "Forgotten" column and red recall-failure state rendering correctly.
+   All clean, nothing to fix. Recorded in
+   [`2e90416`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/2e90416)
+   so a future run doesn't redo this believing it's unverified.
+3. Also spot-checked links (`pnpm dlx linkinator ./dist --silent`: 3
+   links, all resolve, no external links to worry about) — clean, no
+   action needed.
 
-It didn't. `render()`'s `aria-live="polite"` `role="status"` announcement
-region only updated `textContent` when `newlyEvicted.length > 0`. Widening
-the window back (un-evicting messages) left whatever "N messages just fell
-out" text was already there completely unchanged and now false. The region
-is `sr-only` (CSS-hidden, not `aria-hidden`), so a screen-reader user
-browsing linearly, not just one relying on the live-announce trigger,
-could land on and hear the stale claim.
-
-Fixed by computing `newlyRestored` symmetrically to `newlyEvicted` and
-announcing "N messages became visible again" on that branch. Added a
-DOM-wired regression test (fact → fill → widen, assert text flips), then
-confirmed live against the built `dist/` with `agent-browser eval` (typed
-fact → 10 filler clicks → "One message just fell out..." → widen select to
-200 → "2 messages became visible again.") before considering it done —
-not just the unit test. Pushed as
-[`275c3b2`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/275c3b2)
-+ [`2e1fac8`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/2e1fac8)
-(CLAUDE.md lesson). `pnpm check` 41/41 green, working tree clean.
-
-No other DOM/markup elements changed (same `sr-only` node, new text
-content only), so the standing five browser-sensor families (a11y,
-keyboard, resize, full walkthrough, slow-connection) weren't re-run in
-full — same standing rule as before, and this change is non-visual so
-none of those would exercise it differently anyway.
+Working tree clean, all three commits pushed (`b7415e2..2e90416`).
+`pnpm check` 42/42 green throughout.
 
 ## Next action
 
-Still >24h to cutoff (due noon Mon 17 Aug; ~76h at this run's start), so
-per doctrine this stays plan/build/deepen for at least one more run.
+Still >24h to cutoff (~68h at this run's start), so per doctrine this
+stays plan/build/deepen for at least one more run, but the runway for
+*this specific kind* of work (asymmetry hunting in `context.ts`/`main.ts`,
+and the standing browser-sensor sweep) looks close to genuinely dry now:
+two confirms-only asymmetry passes in a row, and a full sensor sweep that
+came back completely clean. A future run should:
 
-- This pass shows the "no genuinely new lens left" read from the last two
-  hand-offs was premature --- the productive question turned out to be
-  "does this side effect handle direction X," asked per DOM-observable
-  side effect, not per function. Before assuming render() is exhausted
-  again, check whether any *other* side effect it produces (there were
-  three: transcript membership, meter classes, announcement text) has an
-  un-examined direction or an un-examined interaction with the
-  window-size select specifically, since that's the one control that
-  makes previously-one-way state (eviction) reversible.
-- If a future run re-reads `render()` fresh and finds nothing further
-  there, that's a real signal (not a forced null result) to move to
-  `PROCESS.md`/reflection prep, or to stop touching `context.ts`/`main.ts`
-  and let the content settle.
-- Strongest `PROCESS.md` candidates so far, roughly in strength order: the
-  contiguous-eviction bug (`6020844`), the case-sensitivity bug
-  (`330e514`), this run's stale-announcement bug (`275c3b2`), the
-  `role=group` a11y fix, the DOM-reconciliation animation rewrite. Four
-  is plenty for the 400--600 word budget; this run's find is a solid
-  fourth or fifth citation, not necessarily one to add on top of an
-  already-full set.
+- Not force a tenth identical asymmetry pass over `context.ts`/`main.ts`
+  without a new, specific lens (a new side effect, a new direction, a new
+  shared-input class) — re-read this file and the project `CLAUDE.md`'s
+  running list first to check whether the previous run's lens has
+  actually been exhausted, rather than assuming from this note alone.
+- Consider the **response-to-brief** criterion directly rather than only
+  process/artefact sensors: re-read the brief's "one strong idea, carried
+  all the way" language against the current copy/scope with fresh eyes —
+  this hasn't been revisited since the "decided against a pin/mitigation
+  mechanic" scoping call several runs back.
 - Start `PROCESS.md`/reflection only once inside roughly the last
-  24--48h, or once a future run judges the commit history genuinely
-  settled --- still not there at ~76h.
+  24--48h (still not there at ~68h), or once a future run judges the
+  commit history genuinely settled. Strongest `PROCESS.md` candidates,
+  roughly in strength order: the contiguous-eviction bug (`6020844`), the
+  case-sensitivity bug (`330e514`), the stale-announcement bug
+  (`275c3b2`), the `role=group` a11y fix. Four is plenty for the
+  400--600 word budget.
 - `comp4020-crit2-dachi` remains finished, green, and pushed as of the
   last check; no action needed there unless its live URL status changes.
