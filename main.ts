@@ -170,6 +170,8 @@ resetButton?.addEventListener("click", () => {
   fillerIndex = 0;
   previousEvictedIds = new Set();
   if (announcement) announcement.textContent = "";
+  if (composerInput) composerInput.value = "";
+  if (composerPreview) composerPreview.textContent = "≈ 0 tokens";
   render();
 });
 

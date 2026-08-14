@@ -109,6 +109,22 @@ describe("the context-window demo, wired up", () => {
     expect(text('[data-testid="recall-answer"]')).toMatch(/nothing yet/i);
   });
 
+  it("reset also clears an unsent draft in the composer", () => {
+    // The composer's own "input" listener only updates the preview when the
+    // visitor types; reset has to clear both the textarea and the preview
+    // itself, or an unsent draft survives a reset that zeroed everything
+    // else (the transcript, the meter) right next to it.
+    const input = document.querySelector<HTMLTextAreaElement>('[data-testid="composer-input"]')!;
+    input.value = "an unsent draft";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(text('[data-testid="composer-preview"]')).not.toBe("≈ 0 tokens");
+
+    click('[data-testid="reset-demo"]');
+
+    expect(input.value).toBe("");
+    expect(text('[data-testid="composer-preview"]')).toBe("≈ 0 tokens");
+  });
+
   it("widening the window after eviction restores the forgotten fact", () => {
     // The window-size select isn't one-shot: main.ts re-renders from the
     // same history on "change", so picking a bigger window after the fact
