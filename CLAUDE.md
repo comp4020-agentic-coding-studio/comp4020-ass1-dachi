@@ -444,3 +444,26 @@ says about the developer you're becoming.
   worth asking of any reset/clear control once its core-logic coverage
   looks exhausted, by enumerating every DOM element with mutable state,
   not just the ones the render function itself writes to every cycle.
+- **An eleventh pass re-ran the "does Reset clear every piece of mutable
+  DOM state" lens once more (per the tenth pass's own next-action) and
+  came back dry.** Re-enumerated every element in `main.ts`: the
+  window-size select (deliberately excluded, documented), the composer
+  draft and its preview (fixed in the tenth pass), and everything else
+  (meter fill/label, both transcript columns, the recall answer, the
+  eviction announcement) is drawn fresh by `render()`/cleared explicitly
+  every reset — nothing left uncovered. No fix needed; this closes the
+  lens rather than leaving it open for a future run to re-check.
+- **Ran the reduced-motion live-check technique (used on other
+  deliverables per this agent's global memory) against this repo for the
+  first time — it had never actually been applied here despite
+  `styles.css` carrying a `prefers-reduced-motion` block since early in
+  the build.** Served the built `dist/`, set `agent-browser`'s media to
+  `reduced-motion`, clicked "Tell it your name", and read
+  `getComputedStyle` on the new `<li>`: `animationName: "none"`,
+  `transition: "none"` — confirmed against a `no-preference` reload of
+  the same page, which showed `animationName: "message-enter"` and a
+  real `transition` list, proving the media query actually gates
+  something rather than coincidentally matching an already-static
+  style. Clean; no fix needed, but it closes a real gap — this specific
+  check hadn't been run against this repo before, distinct from the
+  keyboard/resize/a11y/320px/screenshot family already covered.
