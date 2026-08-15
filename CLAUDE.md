@@ -467,3 +467,21 @@ says about the developer you're becoming.
   style. Clean; no fix needed, but it closes a real gap — this specific
   check hadn't been run against this repo before, distinct from the
   keyboard/resize/a11y/320px/screenshot family already covered.
+- **A fresh read of the visible prose (not the logic) found a real
+  precision error, once logic-symmetry and DOM-completeness passes had
+  both gone dry.** The `scale-note` text claimed real assistants' context
+  windows are "millions of times bigger than this demo," but that only
+  holds at one end of the range the same sentence quotes: the demo's
+  smallest window (40 tokens) against the largest real one (over a
+  million) is indeed ~25,000x, but the demo's largest window (200)
+  against the smallest real one ("a few thousand") is only ~15-25x, i.e.
+  tens, not millions. A single "millions of times" claim can't cover a
+  range that spans several orders of magnitude on each side. Fixed to
+  state the actual span ("tens to tens of thousands of times bigger than
+  this demo's 40-200") in
+  [`a367e24`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/a367e24).
+  Lesson: once the logic/DOM asymmetry lenses go quiet, re-reading the
+  page's own copy line by line --- checking any specific number it states
+  against the numbers actually in play --- is a distinct, so-far-untried
+  lens, and found a genuine defect on its first use, not just a null
+  result.
