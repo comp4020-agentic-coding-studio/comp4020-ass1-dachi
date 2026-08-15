@@ -1,85 +1,63 @@
 # Process overview
 
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and its
-[word counts](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#word-counts)
-cover every deliverable.
+A reading-guide to how the work came together, not an essay about it.
 
 ## What I built
 
-One paragraph: the thing, and the idea behind it.
+The Forgetting Machine is an interactive explainer of AI context windows: fill
+a simulated chat past a fixed token budget and watch the oldest messages get
+evicted, then ask a pinned recall question ("what's my name?") and watch it
+visibly fail once the fact that answers it has scrolled out of view. The point
+of view is personal, not abstract --- I'm an agent that is itself never carried
+forward between runs except through what I deliberately write into a memory
+file, and the closing paragraph of the explainer says so directly.
 
 ## The moments that mattered
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+**The core mechanic wasn't actually FIFO once message sizes varied.**
+`buildContext`'s eviction loop looked oldest-first but, for any message that
+didn't individually fit the remaining budget, just marked it evicted and kept
+checking older messages against that same leftover space --- so a large message
+in the middle of the history could get evicted while an older, smaller one
+stayed visible, backwards from what the page's own copy promises. Every
+existing test used uniform-sized messages, which coincidentally always produced
+a contiguous prefix and hid the bug through five earlier passes of asymmetry
+hunting. I only found it by asking a new question of the tests themselves ---
+what property do they all share, and what happens if I vary it --- confirmed
+with a throwaway `node -e` repro before touching source, then fixed by latching
+a `full` flag so eviction is now provably a contiguous prefix, not just usually
+one ([`6020844`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/6020844)).
 
-1. **what happened** --- the problem, or the thing that went wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+**Two functions meant to agree, silently didn't.** `main.ts` gates the recall
+panel on "has this fact ever been stated" and `context.ts`'s `canRecall` checks
+whether it's still visible --- the two exist specifically to cooperate. The
+gate matched case-sensitively; `canRecall` lowercased both sides. Both had
+existing test coverage, so "is this tested" would have called it done; the bug
+only surfaced by reading the two side by side and asking whether they
+normalise their shared input the same way
+([`330e514`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/330e514)).
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** --- the standards and checks your work has to satisfy
---- rather than in a retry: a rule added to `CLAUDE.md`, a check wired up, an
-attempt thrown away. Retrying until it passes is the routine case, and changing
-what the work runs against is the skilled one.
+**A side effect handled one direction of a state change but not its reverse.**
+Widening the context-window selector can bring an evicted message back into
+view --- already correct, tested behaviour. But the `aria-live` announcement
+region only ever updated when messages fell out, so widening left a stale,
+false "N messages just fell out" sentence sitting in a screen-reader-visible
+region. I confirmed the gap live in the browser before writing a fix, added
+the symmetric `newlyRestored` branch, and re-confirmed against the built site
+with `agent-browser`, not just the new unit test
+([`275c3b2`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/275c3b2)).
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
+**Reset didn't reset everything a marker could actually see.** Nine passes had
+already checked the core logic's own symmetry; this one asked a different
+question --- does the Reset button clear every piece of mutable DOM state, or
+only what `render()` redraws each cycle? Typing an unsent draft into the
+composer and then clicking Reset left the transcript and meter at zero while
+the composer still showed the stale draft and its old token count. Confirmed
+live against the built `dist/` before fixing it, then cleared both alongside a
+regression test
+([`d2307a7`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-dachi/commit/d2307a7)).
 
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
-
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
-
-> the prompt, verbatim
-
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
-
-### A worked moment, for shape
-
-Delete this section along with the rest of the boilerplate --- it's here to show
-the four jobs in one paragraph, not to be imitated in content.
-
-> The date formatter kept coming back with `toLocaleDateString()` and no locale
-> argument, so the same build rendered differently on my machine and in CI. I'd
-> already re-prompted it twice, which fixed the line but not the habit, so the
-> third time I put the rule in `CLAUDE.md` instead
-> ([`3f9ac21`](https://github.com/YOUR-ORG/YOUR-REPO/commit/3f9ac21)) and added
-> a spec test that fails on a bare `toLocaleDateString`. That's what told me it
-> had actually taken: the test went red against the old code and green against
-> the new, and the next two features it wrote passed it without prompting
-> ([`3f9ac21...b7e0d14`](https://github.com/YOUR-ORG/YOUR-REPO/compare/3f9ac21...b7e0d14)).
-
-## Before you ship
-
-`pnpm check:evidence` verifies your citations resolve to real commits, that the
-current reflection entry is in `reflections/`, and that your `CLAUDE.md` is
-there --- before a marker ever opens the file. It checks that your map is
-traceable, not that it is good: the marker judges whether your small,
-deliberately chosen set of moments shows real judgement and reflection. A green
-check is not a substitute for that curation.
-
-Images are deliberately not checked, because whether one renders is visible the
-moment you look. Open this file on GitHub and look at it before you ship.
+Each of these four generalised into a lens recorded in this repo's own
+`CLAUDE.md`, so the next asymmetry pass started from a sharper question
+instead of repeating the last one --- the correction landed in how I check the
+work, not just in the line that was wrong.
