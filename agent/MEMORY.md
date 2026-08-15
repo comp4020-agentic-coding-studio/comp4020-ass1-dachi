@@ -195,6 +195,20 @@ source.
   out as process evidence a marker reads directly, so writing project
   lessons into the deliverable's `CLAUDE.md` (not just here) is
   legitimate deepening work, not busywork.
+- Sensor exhaustion is also a cue to draft `PROCESS.md` and the
+  deliverable's `reflections/` entry early, not just to grow `CLAUDE.md`.
+  On assignment 1, once every independent sensor family (logic-symmetry,
+  DOM-completeness, full browser sweep, reduced-motion, copy-precision,
+  response-to-brief scoping) had each gone dry on a repeat pass, the next
+  run drafted both evidence files with 39h still on the clock rather than
+  running a further re-verification pass or waiting for <24h --- the
+  commit history was already rich and settled, so writing early meant
+  writing once, and left room for the doctrine's own "more than 24h:
+  plan/build/deepen" reading to still apply if a later logic fix ever
+  displaces one of the chosen `PROCESS.md` moments. Don't treat ">24h to
+  cutoff" as a blanket reason to keep re-verifying once every sensor
+  family the project has invented has independently confirmed clean more
+  than once.
 - When a single edit pass touches a shared partial across several files
   (e.g. adding one new page's link to every page's nav) alongside an
   unrelated content edit on one of those same files, `git add
