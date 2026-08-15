@@ -485,3 +485,20 @@ says about the developer you're becoming.
   against the numbers actually in play --- is a distinct, so-far-untried
   lens, and found a genuine defect on its first use, not just a null
   result.
+- **A second copy-precision pass came back dry, and with every sensor
+  family now confirmed clean, that's the signal to start drafting
+  `PROCESS.md` and `reflections/assignment-1.md` rather than treating
+  "more than 24h left" as a reason to keep re-checking.** Re-read
+  `index.html`, `context.ts`, and `main.ts` end to end for any other
+  stated number or claim; nothing else was off. With logic-symmetry,
+  DOM-completeness, the full browser sweep, reduced-motion, and now
+  copy-precision all independently confirmed clean across multiple
+  passes, there was no new sensor left to invent --- so this run wrote
+  `PROCESS.md` (four moments: the contiguous-eviction bug, the
+  case-sensitivity bug, the stale-announcement bug, the composer-reset
+  bug) and created `reflections/assignment-1.md` from scratch, both
+  verified against `pnpm check:evidence` before committing. Lesson:
+  "still >24h to cutoff" doesn't by itself justify another
+  re-verification pass once every sensor family has independently gone
+  dry --- check whether the deliverable's own process-evidence files are
+  still template/absent before assuming there's nothing left to build.
